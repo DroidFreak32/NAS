@@ -1,0 +1,196 @@
+version: "3"
+name: management
+
+services:
+  traefik:
+    container_name: traefik
+    # The official v2 Traefik docker image
+    image: traefik:v2.10
+    # Enables the web UI and tells Traefik to listen to docker
+    # command: --api.insecure=true --providers.docker
+
+    env_file:
+      - .env
+
+    ports:
+      # The HTTP port
+      - "80:80"
+      # The Web UI (enabled by --api.insecure=true)
+      - "8080:8080"
+      # The HTTPS Port
+      - "443:443"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    labels:
+      - "traefik.enable=true"
+
+      # Generate TLS Certs for Public subdomain
+      - "traefik.http.routers.traefik.tls.certresolver=production"
+      - "traefik.http.routers.traefik.tls.domains[0].main=$TRAEFIK_PUBLIC_DOMAIN"
+      - "traefik.http.routers.traefik.tls.domains[0].sans=*.$TRAEFIK_PUBLIC_DOMAIN"
+
+      # Generate TLS Certs for VPN subdomain
+      - "traefik.http.routers.traefik.tls.domains[1].main=$TRAEFIK_PRIVATE_DOMAIN"
+      - "traefik.http.routers.traefik.tls.domains[1].sans=*.$TRAEFIK_PRIVATE_DOMAIN"
+
+      # Use a custom service to avoid traefik getting confused: https://stackoverflow.com/a/59859846/6437140
+      - "traefik.http.routers.traefik.service=certbot"
+      - "traefik.http.services.certbot.loadbalancer.server.port=80"
+
+      # # For internal API Access
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.$TRAEFIK_PRIVATE_DOMAIN`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      # # Only allow access through Tailscale
+      - "traefik.http.routers.dashboard.middlewares=lan"
+      - "traefik.http.routers.dashboard.tls=true"
+      - "traefik.http.middlewares.lan.ipwhitelist.sourcerange=100.64.0.0/10, 172.18.0.0/12, 127.0.0.1/8"
+
+      # Additional redirects for services that are not running on docker containers
+      # Update: Does not actually work.
+      # - "traefik.http.routers.cockpit.rule=Host(`cockpit.$TRAEFIK_PRIVATE_DOMAIN`)"
+      # - "traefik.http.routers.cockpit.entrypoints=websecure"
+      # - "traefik.http.routers.cockpit.tls=true"
+      # - "traefik.http.routers.cockpit.service=cockpit"
+      # - "traefik.http.services.cockpit.loadbalancer.server.port=9090"
+      # # - "traefik.http.services.cockpit.loadbalancer.servers.url[0]=https://host.docker.internal"
+
+    volumes:
+      # So that Traefik can listen to the Docker events
+      - ./traefik.yml:/etc/traefik/traefik.yml
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/log/traefik:/var/log/traefik
+      - traefik-ssl-certs:/ssl-certs
+      - letsencrypt:/etc/letsencrypt/live:ro
+
+    # networks:
+    #   - "$DOCKER_NETWORK_NAME"
+
+  traefik-ssl-certificate-exporter:
+    image: rafi0101/traefik-ssl-certificate-exporter:latest
+    container_name: traefik-certexport
+    environment:
+      CRON_TIME: "* * * * *"
+      CERT_OWNER_ID: "${UID}"
+      CERT_GROUP_ID: "${GID}"
+    volumes:
+      - traefik-ssl-certs:/app/traefik
+      - letsencrypt:/app/certs
+    # networks:
+    #   - "$DOCKER_NETWORK_NAME"
+
+  whoami_public:
+    container_name: whoami_public
+    # A container that exposes an API to show its IP address
+    image: traefik/whoami
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami_public.rule=Host(`whoami.$TRAEFIK_PUBLIC_DOMAIN`)"
+      - "traefik.http.routers.whoami_public.entrypoints=web"
+
+      # Manually forcing https
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.whoami_public.middlewares=redirect-to-https"
+
+      # Needs another router for HTTPS
+      - "traefik.http.routers.whoami_public_sec.rule=Host(`whoami.$TRAEFIK_PUBLIC_DOMAIN`)"
+      - "traefik.http.routers.whoami_public_sec.entrypoints=websecure"
+      - "traefik.http.routers.whoami_public_sec.tls=true"
+      # - "traefik.http.routers.whoami_public_sec.tls.certresolver=production"
+    # networks:
+    #   - "$DOCKER_NETWORK_NAME"
+
+  whoami:
+    container_name: whoami
+    # A container that exposes an API to show its IP address
+    image: traefik/whoami
+    labels:
+
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami.rule=Host(`whoami.${TRAEFIK_PRIVATE_DOMAIN}`)"
+      - "traefik.http.routers.whoami.entrypoints=web"
+
+      # Manually forcing https
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.whoami.middlewares=redirect-to-https"
+      # Instead of above, you can also use any existing Middleware in the traefik yml config's Dynamic Config section
+      # comment above two lines and add uncomment this
+      # - "traefik.http.routers.whoami.middlewares=https-redirectscheme@file"
+
+      # Needs another router for HTTPS
+      - "traefik.http.routers.whoami_sec.rule=Host(`whoami.${TRAEFIK_PRIVATE_DOMAIN}`)"
+      - "traefik.http.routers.whoami_sec.entrypoints=websecure"
+      - "traefik.http.routers.whoami_sec.tls=true"
+
+    # networks:
+    #   - "$DOCKER_NETWORK_NAME"
+
+  qcs:
+    image: qualys/qcs-sensor:latest
+    container_name: qualys-container-sensor
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      ACTIVATIONID: "b26a6f3d-3b1a-41ad-9ce2-9a0d4f4c1de1"
+      CUSTOMERID: "7b965f5c-6540-c28c-8024-8289aa9d1f7b"
+      POD_URL: "https://cmsqagpublic.qg1.apps.qualys.in/ContainerSensor"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc/qualys:/usr/local/qualys/qpa/data/conf/agent-data
+      - /usr/local/qualys/sensor/data:/usr/local/qualys/qpa/data
+    network_mode: host
+
+  # https://github.com/traefik/traefik/issues/977#issuecomment-394119675
+  ipv6nat:
+    container_name: docker-ipv6nat
+    image: robbertkl/ipv6nat
+    privileged: true
+    network_mode: "host"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /lib/modules:/lib/modules:ro
+
+networks:
+  # Uncomment this this if you have not run the first run script!!
+  # docker-ipv6:
+  #   name: "$DOCKER_NETWORK_NAME"
+  #   # Use a custom driver
+  #   driver: bridge
+  #   driver_opts:
+  #     # Cleaner network names
+  #     com.docker.network.bridge.name: "$DOCKER_NETWORK_NAME"
+  #   enable_ipv6: true
+  #   ipam:
+  #     config:
+  #       -
+  #         subnet: 172.18.0.0/16
+  #         gateway: 172.18.0.1
+  #       -
+  #         subnet: fd01:bad:c0de::/64
+  #         gateway: fd01:bad:c0de::1
+
+  default:
+    name: "$DOCKER_NETWORK_NAME"
+    external: true
+
+volumes:
+  letsencrypt:
+    name: letsencrypt
+    driver_opts:
+      type: none
+      device: /etc/letsencrypt/live
+      o: bind
+
+  traefik-ssl-certs:
+    name: traefik-ssl-certs
+    driver_opts:
+      type: none
+      device: /etc/letsencrypt/traefik
+      o: bind
+  # acme-challenge:
+  #   name: acme-challenge
+  #   driver_opts:
+  #     type: none
+  #     device: /var/www/.well-known/acme-challenge
+  #     o: bind
+

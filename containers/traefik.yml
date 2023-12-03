@@ -1,0 +1,217 @@
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+
+experimental:
+  plugins:
+    theme-park:
+      modulename: "github.com/packruler/traefik-themepark"
+      version: "v1.2.2"
+
+# -- (Optional) Change Log Level and Format here...
+#     - loglevels [DEBUG, INFO, WARNING, ERROR, CRITICAL]
+#     - format [common, json, logfmt]
+log:
+  level: DEBUG
+  format: common
+  filePath: /var/log/traefik/traefik.log
+
+# -- (Optional) Enable Accesslog and change Format here...
+#     - format [common, json, logfmt]
+accesslog:
+  format: common
+  filePath: /var/log/traefik/access.log
+
+# -- (Optional) Enable API and Dashboard here, don't do in production
+api:
+  dashboard: true
+  # insecure: true
+  # debug: true
+
+
+metrics:
+  prometheus:
+  # Buckets for latency metrics
+    buckets:
+      - 0.1
+      - 0.3
+      - 1.2
+      - 5.0
+
+# -- Change EntryPoints here...
+entryPoints:
+  web:
+    address: :80
+    proxyProtocol:
+      trustedIPs:
+        - "127.0.0.1/32"
+        - "192.168.0.0/16"
+        - "172.16.0.0/12"
+        - "fc00::/7"
+    # forwardedHeaders:
+    #   insecure: true
+    # -- (Optional) Redirect all HTTP to HTTPS
+    # http:
+    #   redirections:
+    #     entryPoint:
+    #       to: websecure
+    #       scheme: https
+  websecure:
+    address: :443
+    proxyProtocol:
+      trustedIPs:
+        - "127.0.0.1/32"
+        - "192.168.0.0/16"
+        - "172.16.0.0/12"
+        - "fc00::/7"
+
+    # forwardedHeaders:
+    #   insecure: true
+  # -- (Optional) Add custom Entrypoint
+  # custom:
+  #   address: :8080
+
+# -- Configure your CertificateResolver here...
+certificatesResolvers:
+  staging:
+    acme:
+      email: rushabshah32@gmail.com
+      storage: /ssl-certs/acme.json
+      caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
+#       -- (Optional) Remove this section, when using DNS Challenge
+      # httpChallenge:
+      #   entryPoint: web
+#       -- (Optional) Configure DNS Challenge
+      dnsChallenge:
+        provider: cloudflare
+        disablePropagationCheck: true
+        delayBeforeCheck: 60
+        resolvers:
+          - "1.1.1.1:53"
+          - "1.0.0.1:53"
+
+  production:
+    acme:
+      email: rushabshah32@gmail.com
+      storage: /ssl-certs/acme.json
+      caServer: "https://acme-v02.api.letsencrypt.org/directory"
+#       -- (Optional) Remove this section, when using DNS Challenge
+#       httpChallenge:
+#         entryPoint: web
+#       -- (Optional) Configure DNS Challenge
+      dnsChallenge:
+        provider: cloudflare
+        disablePropagationCheck: true
+        delayBeforeCheck: 60
+        resolvers:
+          - "1.1.1.1:53"
+          - "1.0.0.1:53"
+
+# -- (Optional) Disable TLS Cert verification check
+serversTransport:
+  insecureSkipVerify: true
+
+tls:
+  options:
+    default:
+      minVersion: VersionTLS12
+      sniStrict: true
+# -- (Optional) Overwrite Default Certificates
+# tls:
+#   stores:
+#     default:
+#       defaultCertificate:
+#         certFile: /etc/traefik/certs/cert.pem
+#         keyFile: /etc/traefik/certs/cert-key.pem
+# -- (Optional) Disable TLS version 1.0 and 1.1
+#   options:
+#     default:
+#       minVersion: VersionTLS12
+
+providers:
+  docker:
+    # -- (Optional) Enable this, if you want to expose all containers automatically
+    exposedByDefault: false
+  file:
+    directory: /etc/traefik
+    watch: true
+
+
+
+
+# DYNAMIC CONFIGURATIONS
+
+http:
+  routers:
+    pve:
+      rule: Host(`pve.{{ env "TRAEFIK_PRIVATE_DOMAIN" }}`)
+      service: pve-service
+      priority: 1000
+      entryPoints:
+        - websecure
+        - web
+      tls: {}
+      middlewares:
+        - default-headers
+        - https-redirectscheme
+
+    cockpit:
+      rule: Host(`cockpit.{{ env "TRAEFIK_PRIVATE_DOMAIN" }}`)
+      service: cockpit-service
+      priority: 1000
+      entryPoints:
+        - websecure
+        - web
+      tls: {}
+      # middlewares:
+      #   - https-redirectscheme
+
+    netdata:
+      rule: Host(`netdata.{{ env "TRAEFIK_PRIVATE_DOMAIN" }}`)
+      service: netdata-service
+      priority: 1000
+      entryPoints:
+        - websecure
+        - web
+      tls: {}
+      # middlewares:
+      #   - https-redirectscheme
+
+
+  services:
+    pve-service:
+      loadBalancer:
+        servers:
+          - url: "https://host.docker.internal:8006"
+        passHostHeader: true
+
+    cockpit-service:
+      loadBalancer:
+        servers:
+          - url: "https://host.docker.internal:9090"
+        passHostHeader: true
+
+    netdata-service:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:19999"
+        passHostHeader: true
+
+  middlewares:
+    default-headers:
+      headers:
+        frameDeny: true
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 15552000
+        customFrameOptionsValue: SAMEORIGIN
+        customRequestHeaders:
+          X-Forwarded-Proto: https
+    https-redirectscheme:
+      redirectScheme:
+        scheme: https
+        # permanent: true
