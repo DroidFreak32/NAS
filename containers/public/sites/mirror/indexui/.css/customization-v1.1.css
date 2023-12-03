@@ -1,0 +1,554 @@
+.single-item.directory .verify-hashes {
+    opacity: 0.2;
+}
+
+button.ui.button {
+    background-color: #36393e;
+}
+
+button.ui.button:hover, button.ui.button:active, button.ui.button:focus {
+    background-color: #44484e;
+    color: #fff;
+}
+
+.customeyes-files .single-item:not(:first-child) {
+    text-align: right;
+    position: relative;
+    min-height: 24px;
+}
+
+.customeyes-files .single-item:not(:first-child) a {
+    text-align: left;
+    position: absolute;
+    left: 0;
+    min-height: 24px;
+    padding-top: 3px;
+}
+
+.customeyes-files {
+    white-space: unset;
+}
+
+.customeyes-files .size {
+    width: 5em;
+    display: inline-block;
+    padding-top: 3px;
+}
+
+.customeyes-toolbar {
+    color: #cfcfcf;
+    background-color: #2f3136;
+    padding: 1em;
+    border-radius: .28571429rem;
+    box-shadow: 0 0 0 1px rgba(34, 36, 38, 0.22) inset, 0 0 0 0 transparent;
+    display: flex;
+}
+
+.customeyes-toolbar .option-group {
+    display: inline-block;
+    margin: 0 2em 0 0;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    min-width: 50%;
+}
+
+.customeyes-toolbar input[type=checkbox] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+.customeyes-toolbar input[type=checkbox]:checked + label::after {
+    display: block;
+}
+
+.customeyes-toolbar label {
+    cursor: pointer;
+    position: relative;
+    display: inline-block;
+    min-height: 20px;
+}
+
+.customeyes-toolbar label::before {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    margin-right: .4em;
+    position: relative;
+    top: -1px;
+    border: 2px solid #616f80;
+}
+
+.customeyes-toolbar label::after {
+    display: none;
+    content: 'x';
+    font-weight: 700;
+    position: absolute;
+    left: 0.4%;
+    top: 5%;
+    width: 15px;
+    height: 16px;
+    font-size: 16px;
+    line-height: .9;
+    background-size: contain;
+    background-repeat: no-repeat;
+    text-align: center;
+}
+
+.customeyes-files.icons-enabled .single-item:not(:first-child) a {
+    padding-left: 32px;
+}
+
+.customeyes-files.icons-enabled .customeyes-icon {
+    display: block;
+}
+
+.customeyes-icon {
+    display: none;
+    text-align: center;
+    width: 100%;
+    max-width: 24px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 20;
+    filter: grayscale(1);
+    -webkit-filter: grayscale(1);
+}
+
+.colored-icons .customeyes-icon {
+    filter: grayscale(0);
+    -webkit-filter: grayscale(0);
+}
+
+.customeyes-files .name {
+    width: auto;
+    max-width: calc(100% - 17em);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    z-index: 1;
+    display: block;
+}
+
+html.hashcheck-enabled .customeyes-files .name {
+	max-width: calc(100% - 17em);
+}
+
+html.bookmarks-enabled.hashcheck-enabled .customeyes-files .name {
+	max-width: calc(100% - 18.5em);
+}
+
+.customeyes-files .name:hover, .customeyes-files .name:focus {
+    overflow-x: visible;
+    background: #2f3136;
+    z-index: 10;
+    max-width: none;
+    padding-right: .75em;
+}
+
+.customeyes-files.focus-highlight .single-item:hover, .customeyes-files.focus-highlight .single-item:focus, .customeyes-files.focus-highlight .name:hover, .customeyes-files.focus-highlight .name:focus {
+    background-color: #36393e;
+}
+
+.customeyes-files.focus-highlight .focus {
+    background-color: #36393e;
+}
+
+.customeyes-files .directory .size {
+    color: transparent;
+}
+
+html.bookmarks-enabled .bookmark {
+    display: block;
+}
+
+.bookmark {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 4px;
+    z-index: 20;
+    background: 0 0;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    text-align: center;
+    font-size: 24px;
+}
+
+.bookmark:focus {
+    outline: 0;
+}
+
+.bookmark::before {
+    content: '\2606';
+    color: #999;
+}
+
+.bookmark:hover::before, .bookmark:focus::before {
+    color: #eee;
+}
+
+.bookmark.added::before {
+    content: '\2605';
+}
+
+.colored-icons .bookmark.added::before {
+    color: #ffca28;
+}
+
+html.show-bookmarks-list .bookmarks-list {
+    display: block;
+}
+
+.bookmarks-list {
+    display: none;
+    position: relative;
+    color: #cfcfcf;
+    background-color: #2f3136;
+    padding: 1em;
+    border-radius: .28571429rem;
+    box-shadow: 0 0 0 1px rgba(34, 36, 38, 0.22) inset, 0 0 0 0 transparent;
+    margin-top: 1em;
+}
+
+.bookmarks-list ul {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+    height: 10em;
+    overflow-y: auto;
+}
+
+.bookmark-item {
+    margin: 0 0 .5em;
+}
+
+.bookmark-item .name {
+    margin: 0;
+}
+
+.bookmark-item .url {
+    font-size: 14px;
+    opacity: .5;
+}
+
+.bookmark-item .url a {
+    border: 0;
+}
+
+.settings-group {
+    margin-right: 2em;
+    min-width: 9em;
+}
+
+.settings-group h3 {
+    font-size: 16px;
+    margin-bottom: .5em;
+}
+
+/**********************************************************
+ 10/9/2018
+ *********************************************************/
+.verify-hashes {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 24px;
+    height: 24px;
+    z-index: 20;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    outline: none;
+}
+
+.verify-hashes:hover svg, .verify-hashes:focus svg {
+    fill: #7e7e80;
+}
+
+.verify-hashes svg {
+    position: absolute;
+    left: 50% !important;
+    top: 50% !important;
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    fill: #646465;
+}
+
+svg#verify:hover {
+    fill: red;
+}
+
+/**********************************************************
+ Icon States
+ *********************************************************/
+ 
+html.hashcheck-disabled .verify-hashes {
+    display: none;
+}
+
+html.hashcheck-enabled .single-item:not(:first-child) a {
+    margin-left: 32px;
+}
+
+html.hashcheck-enabled .icons-enabled .single-item:not(:first-child) a {
+    margin-left: 24px;
+}
+
+html.hashcheck-enabled.bookmarks-enabled .single-item:not(:first-child) .verify-hashes {
+    left: 23px;
+}
+
+html.hashcheck-enabled.bookmarks-enabled .single-item:not(:first-child) a {
+    margin-left: 24px;
+}
+
+html.hashcheck-enabled.bookmarks-enabled .icons-enabled .single-item:not(:first-child) .verify-hashes {
+    left: 23px;
+}
+ 
+ /**********************************************************
+ End Icon States
+ *********************************************************/
+
+.ui.modal.hashcheck-modal {
+    border-radius: 5px;
+}
+
+.ui.modal.hashcheck-modal .ui.icon.button {
+    background: #2f3036;
+    border-left: 1px solid #393b40;
+}
+
+.ui.modal.hashcheck-modal .ui.label {
+    background-color: #2f3036;
+}
+
+.ui.modal.hashcheck-modal .main-content {
+    background: #393C40;
+    color: #fff;
+}
+
+.ui.modal.hashcheck-modal .header {
+    background: #393C40;
+    color: #fff !important;
+    font-size: 18px;
+}
+
+.ui.modal.hashcheck-modal .content strong {
+    display: block;
+}
+
+.ui.modal.hashcheck-modal .bytes {
+    display: inline-block;
+    margin-left: 0.5em;
+    color: #888;
+}
+
+.ui.modal.hashcheck-modal .bytes::before {
+    content: '(';
+}
+
+.ui.modal.hashcheck-modal .bytes::after {
+    content: ' bytes)';
+}
+
+.ui.modal.hashcheck-modal .ui.action.input {
+    margin-bottom: 1em;
+}
+
+.ui.modal.hashcheck-modal .ui.label {
+    width: 6em;
+}
+
+.ui.modal.hashcheck-modal input[type="text"] {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+}
+
+.ui.modal.hashcheck-modal input[type="text"]::-moz-selection {
+    background: #fff;
+    color: #000;
+}
+
+.ui.modal.hashcheck-modal input[type="text"]::selection {
+    background: #fff;
+    color: #000;
+}
+
+.ui.modal.hashcheck-modal .ui.labeled.input:not([class*="corner labeled"]) .label:first-child + input:focus {
+    outline: none;
+    border-color: #999 !important;
+}
+
+.ui.modal.hashcheck-modal .ui.list {
+    width: 100%;
+    margin-bottom: 1em;
+}
+
+.ui.modal.hashcheck-modal .ui.list i {
+    display: inline-block;
+    vertical-align: baseline;
+}
+
+.ui.modal.hashcheck-modal .ui.list .content {
+    display: inline-block;
+    padding-left: 0.25em;
+    width: calc(100% - 1.5em);
+    vertical-align: top;
+}
+
+.ui.modal.hashcheck-modal .data_filename .path {
+    color: #888;
+}
+
+/**********************************************************
+ Helpers
+ *********************************************************/
+/* Hide text (visible to screen readers only) */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    -webkit-clip-path: inset(50%);
+    clip-path: inset(50%);
+    border: 0;
+}
+
+html.hashcheck-enabled .icons-enabled .single-item:not(:first-child) a {
+    margin-left: 28px;
+}
+
+html.hashcheck-enabled.bookmarks-enabled .single-item:not(:first-child) a {
+    margin-left: 54px;
+}
+
+html.hashcheck-enabled.bookmarks-enabled .icons-enabled .single-item:not(:first-child) a {
+    margin-left: 51px;
+}
+
+html.hashcheck-disabled.bookmarks-enabled .single-item:not(:first-child) a {
+    margin-left: 24px;
+}
+
+.customeyes-alert h3 {
+	margin-top: 0.5em;
+}
+
+.customeyes-alert .ui.button {
+	background-color: #36393e;
+	margin: 0 1em 0.5em 0;
+}
+
+.customeyes-alert .ui.button:hover,
+.customeyes-alert .ui.button:focus {
+	background-color: #40444a;
+	color: #fff;
+}
+
+
+/******************************************/
+/* Media Queries */
+/******************************************/
+
+html.disable-date .single-item .date-time {
+    display: none;
+}
+
+html.disable-date .customeyes-files .name {
+        max-width: calc(100% - 4em);
+    }
+
+html.disable-date.hashcheck-enabled.bookmarks-enabled .customeyes-files .name {
+    max-width: calc(100% - 5.5em);
+}
+
+html.disable-date.hashcheck-disabled.bookmarks-enabled .customeyes-files .name {
+    max-width: calc(100% - 4em);
+}
+
+html.disable-date.hashcheck-disabled .customeyes-files .name {
+    max-width: calc(100% - 3em);
+}
+
+html.disable-date .icons-enabled .customeyes-files .name {
+    max-width: calc(100% - 3em);
+}
+
+@media (max-width: 640px) {
+    html.disable-date-mobile .single-item .date-time {
+        display: none;
+    }
+    
+    html.disable-date-mobile  .customeyes-files .name {
+        max-width: calc(100% - 4em);
+    }
+
+    html.disable-date-mobile.hashcheck-enabled.bookmarks-enabled .customeyes-files .name {
+        max-width: calc(100% - 5em);
+    }
+
+    html.disable-date-mobile.hashcheck-disabled.bookmarks-enabled .customeyes-files .name {
+        max-width: calc(100% - 4em);
+    }
+
+    html.disable-date-mobile.hashcheck-disabled .customeyes-files .name {
+        max-width: calc(100% - 3em);
+    }
+
+    html.disable-date-mobile .icons-enabled .customeyes-files .name {
+        max-width: calc(100% - 4em);
+    }
+}
+
+@media (max-width: 662px) {
+    .customeyes-toolbar {
+        display: block;
+    }
+    
+    .settings-group h3 {
+        margin-top: 1em;
+    }
+    
+    .settings-group.settings-icons h3 {
+        margin-top: 0;
+    }
+}
+/*
+     FILE ARCHIVED ON 13:35:26 May 01, 2021 AND RETRIEVED FROM THE
+     INTERNET ARCHIVE ON 21:26:49 May 17, 2023.
+     JAVASCRIPT APPENDED BY WAYBACK MACHINE, COPYRIGHT INTERNET ARCHIVE.
+
+     ALL OTHER CONTENT MAY ALSO BE PROTECTED BY COPYRIGHT (17 U.S.C.
+     SECTION 108(a)(3)).
+*/
+/*
+playback timings (ms):
+  captures_list: 148.311
+  exclusion.robots: 0.143
+  exclusion.robots.policy: 0.131
+  cdx.remote: 0.064
+  esindex: 0.009
+  LoadShardBlock: 99.2 (3)
+  PetaboxLoader3.datanode: 82.912 (5)
+  load_resource: 163.01 (2)
+  PetaboxLoader3.resolve: 119.99 (2)
+*/

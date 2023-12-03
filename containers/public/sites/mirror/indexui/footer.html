@@ -1,0 +1,31 @@
+            <!-- Footer starts here -->
+            <div class="ui icon message" style="margin-top: 28px;">
+                <i class="download icon"></i>
+                <div class="content">
+                    <div class="ui fluid action input">
+                        <input value="wget -r -nH --no-parent --reject=&quot;index.html*&quot; -e robots=off https://mirror.mlr.sroidfreak32.win/archlinux/" id="cptrg" type="text" readonly>
+                        <button class="ui right labeled icon button" id="cpbtn" data-clipboard-target="#cptrg">
+                        <i class="copy icon"></i>
+                        Copy
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- <hr class="foot">
+                <footer>
+                <div class="row">
+                <div class="nosel">
+                <a href="https://web.archive.org/web/20210501133606/https://the-eye.eu/dmca/" target="_blank" style="font-size:10px;">
+                dmca
+                </a>
+                </div>
+                </div>
+                </footer> -->
+        </div>
+    </div>
+</div>
+<script>
+    var btn = document.getElementById('cpbtn');
+    var clipboard = new Clipboard(btn);
+</script>
+<script src="/.css/customization-v1.1.js"></script>

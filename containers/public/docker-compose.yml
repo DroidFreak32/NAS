@@ -1,0 +1,77 @@
+version: '3'
+name: public-containers
+
+services:
+
+# Arch, btw
+  mirror:
+    build:
+      context: .
+      dockerfile: Dockerfiles/fancyindex.Dockerfile
+      # Avoid strict firewall rules blocking access to internet during build
+      network: host
+    image: alpine-nginx-site-fancyindex:latest
+    container_name: mirror
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # restart: unless-stopped
+    # ports:
+    #   - 80:80
+    #   - 443:443
+    environment:
+      - DOMAIN=${TRAEFIK_PUBLIC_DOMAIN}
+      - SUBDOMAIN=mirror
+    volumes:
+      # Rsync crontab syncs the mirror
+      - /srv/http/mirror/archlinux:/srv/http/mirror/archlinux:ro
+      # My TLS certificates from certbot
+      - letsencrypt:/etc/letsencrypt:ro
+      # Certbot renewal challenges
+      ## Update - Not needed due to DNS chllenge
+      # - acme-challenge:/var/www/.well-known/acme-challenge
+      # Allow to write {access,error}.log
+      - /var/log/nginx/mirror.$TRAEFIK_PUBLIC_DOMAIN:/var/log/nginx/mirror.$TRAEFIK_PUBLIC_DOMAIN
+      # Main Nginx config containing environment variables
+      - ./sites/mirror/mirror.conf:/etc/nginx/templates/template.conf:ro
+      # the-eye.eu theme
+      - ./sites/mirror/indexui:/var/www/indexui:ro
+      # Nginx proxy config for transfer.sh
+      # - ./sites/transfer/transfer.$TRAEFIK_PUBLIC_DOMAIN.conf:/etc/nginx/http.d/transfer.$TRAEFIK_PUBLIC_DOMAIN.conf
+      # Weechat relay blank page for certbot
+      # - ./sites/irc-relay/irc.$TRAEFIK_PUBLIC_DOMAIN.conf:/etc/nginx/http.d/irc.$TRAEFIK_PUBLIC_DOMAIN.conf
+      # Nginx proxy config for Your Spotify
+      # - ./sites/your-spotify/yspot.$TRAEFIK_PUBLIC_DOMAIN.conf:/etc/nginx/http.d/yspot.$TRAEFIK_PUBLIC_DOMAIN.conf
+      # Nginx proxy config for Your Spotify server
+      # - ./sites/your-spotify/yspot-api.$TRAEFIK_PUBLIC_DOMAIN.conf:/etc/nginx/http.d/yspot-api.$TRAEFIK_PUBLIC_DOMAIN.conf
+      - ./Dockerfiles/fancyindex_entry.sh:/entrypoint.sh:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mirror.rule=Host(`mirror.$TRAEFIK_PUBLIC_DOMAIN`)"
+      - "traefik.http.routers.mirror.entrypoints=web"
+      - "traefik.http.services.mirror.loadbalancer.server.port=80"
+
+      # Manually forcing https
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.mirror.middlewares=redirect-to-https"
+      # Instead of above, you can also use any existing Middleware in the traefik yml config's Dynamic Config section
+      # comment above two lines and uncomment this
+      # - "traefik.http.routers.mirror.middlewares=https-redirectscheme@file"
+
+      # Needs another router for HTTPS
+      - "traefik.http.routers.mirror_sec.rule=Host(`mirror.$TRAEFIK_PUBLIC_DOMAIN`)"
+      - "traefik.http.routers.mirror_sec.entrypoints=websecure"
+      - "traefik.http.routers.mirror_sec.tls=true"
+    # entrypoint: /bin/sh -c "sleep 99999"
+
+
+volumes:
+  letsencrypt:
+    external: true
+  # Update - Not needed due to DNS chllenge
+  # acme-challenge:
+  #   external: true
+
+networks:
+  default:
+    name: "$DOCKER_NETWORK_NAME"
+    external: true
