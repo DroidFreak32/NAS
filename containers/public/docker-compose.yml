@@ -63,6 +63,7 @@ services:
       - "traefik.http.routers.mirror_sec.tls=true"
     # entrypoint: /bin/sh -c "sleep 99999"
 
+
   transfer:
     image: dutchcoders/transfer.sh:latest
     container_name: transfer
@@ -94,6 +95,54 @@ services:
       - "traefik.http.routers.transfer_sec.entrypoints=websecure"
       - "traefik.http.routers.transfer_sec.tls=true"
 
+
+  irc-relay:
+    build:
+      # Pass UID and GID from env to dockerfile to create non-root user in image
+      args:
+        UID: "${UID}"
+        GID: "${GID}"
+      context: .
+      dockerfile: Dockerfiles/weechat.Dockerfile
+      # Avoid strict firewall rules blocking access to internet during build
+      network: host
+    # Name and tag of the image
+    image: weechat-relay:latest
+    container_name: weechat
+    environment:
+      - MY_DOMAIN=$TRAEFIK_PUBLIC_DOMAIN
+      - WEECHAT_HOME=${WEECHAT_HOME}
+      - WEECHAT_PASSPHRASE=${WEECHAT_PASSPHRASE}
+    # tty: true
+    # Run as the current UID:GID of host executing this
+    # user: "${UID}:${GID}"
+    ports:
+      - 9001:9001
+    volumes:
+      - letsencrypt:/etc/letsencrypt/live:ro
+      - ./sites/irc-relay:/weechat
+      - ./Dockerfiles/weechat_entry.sh:/weechat_entry.sh
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.irc.rule=Host(`irc.$TRAEFIK_PUBLIC_DOMAIN`)"
+      - "traefik.http.routers.irc.entrypoints=web"
+      # - "traefik.http.services.irc.loadbalancer.servers.url[0]=http://irc-relay:9001"
+
+      # Manually forcing https
+      - "traefik.http.routers.irc.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+
+      # Needs another router for HTTPS
+      - "traefik.http.routers.irc_sec.rule=Host(`irc.$TRAEFIK_PUBLIC_DOMAIN`)"
+      - "traefik.http.routers.irc_sec.entrypoints=websecure"
+      - "traefik.http.routers.irc_sec.tls=true"
+      - "traefik.http.routers.irc_sec.middlewares=redirect-to-glowingbear"
+
+      # # Manually forcing redirect to glowing bear
+      - "traefik.http.middlewares.redirect-to-glowingbear.redirectregex.regex=(.*)"
+      - "traefik.http.middlewares.redirect-to-glowingbear.redirectregex.replacement=https://latest.glowing-bear.org/"
+      - "traefik.http.middlewares.redirect-to-glowingbear.redirectregex.permanent=false"
+    # entrypoint: /bin/sh -c "sleep 99999"
 
 volumes:
   letsencrypt:
