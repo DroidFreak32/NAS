@@ -217,3 +217,72 @@ networks:
   default:
     name: "$DOCKER_NETWORK_NAME"
     external: true
+
+########### Older compose files   ###########
+
+  # ys_server:
+  #   image: yooooomi/your_spotify_server
+  #   container_name: ys_server
+  #   restart: always
+  #   # Can be commented as we are using nginx to connect directly to this container
+  #   # ports:
+  #   #   - "8081:8080"
+  #   links:
+  #     - ys_mongo
+  #   depends_on:
+  #     - ys_mongo
+  #   environment:
+  #     API_ENDPOINT: https://yspot-api.$TRAEFIK_PUBLIC_DOMAIN
+  #     # API_ENDPOINT: https://yspot.$TRAEFIK_PUBLIC_DOMAIN/api
+  #     CLIENT_ENDPOINT: https://yspot.$TRAEFIK_PUBLIC_DOMAIN
+  #     # .env file
+  #     SPOTIFY_PUBLIC: ${SPOTIFY_PUBLIC}
+  #     SPOTIFY_SECRET: ${SPOTIFY_SECRET}
+
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.yspot-api.rule=Host(`yspot-api.$TRAEFIK_PUBLIC_DOMAIN`)"
+  #     - "traefik.http.routers.yspot-api.entrypoints=web"
+  #     - "traefik.http.services.yspot-api.loadbalancer.server.port=8080"
+
+  #     # Manually forcing https
+  #     - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+  #     - "traefik.http.routers.yspot-api.middlewares=redirect-to-https"
+  #     # Instead of above, you can also use any existing Middleware in the traefik yml config's Dynamic Config section
+  #     # comment above two lines and add uncomment this
+  #     # - "traefik.http.routers.yspot-api.middlewares=https-redirectscheme@file"
+
+  #     # Needs another router for HTTPS
+  #     - "traefik.http.routers.yspot-api_sec.rule=Host(`yspot-api.$TRAEFIK_PUBLIC_DOMAIN`)"
+  #     - "traefik.http.routers.yspot-api_sec.entrypoints=websecure"
+  #     - "traefik.http.routers.yspot-api_sec.tls=true"
+
+  # # The actual webpage to connect to
+  # ys_web:
+  #   image: yooooomi/your_spotify_client
+  #   container_name: ys_web
+  #   restart: always
+  #   # Can be commented as we are using nginx to connect directly to this container
+  #   # ports:
+  #   #   - "8082:3000"
+  #   environment:
+  #     API_ENDPOINT: https://yspot-api.$TRAEFIK_PUBLIC_DOMAIN
+  #     # API_ENDPOINT: https://yspot.$TRAEFIK_PUBLIC_DOMAIN/api
+
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.yspot.rule=Host(`yspot.$TRAEFIK_PUBLIC_DOMAIN`)"
+  #     - "traefik.http.routers.yspot.entrypoints=web"
+  #     - "traefik.http.services.yspot.loadbalancer.server.port=3000"
+
+  #     # Manually forcing https
+  #     - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+  #     - "traefik.http.routers.yspot.middlewares=redirect-to-https"
+  #     # Instead of above, you can also use any existing Middleware in the traefik yml config's Dynamic Config section
+  #     # comment above two lines and add uncomment this
+  #     # - "traefik.http.routers.yspot.middlewares=https-redirectscheme@file"
+
+  #     # Needs another router for HTTPS
+  #     - "traefik.http.routers.yspot_sec.rule=Host(`yspot.$TRAEFIK_PUBLIC_DOMAIN`)"
+  #     - "traefik.http.routers.yspot_sec.entrypoints=websecure"
+  #     - "traefik.http.routers.yspot_sec.tls=true"
