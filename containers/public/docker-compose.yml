@@ -63,6 +63,37 @@ services:
       - "traefik.http.routers.mirror_sec.tls=true"
     # entrypoint: /bin/sh -c "sleep 99999"
 
+  transfer:
+    image: dutchcoders/transfer.sh:latest
+    container_name: transfer
+    command: "--provider local \
+      --temp-path /transfer/ \
+      --basedir /transfer/ \
+      --max-upload-size 3221225 \
+      --purge-days 1 \
+      --purge-interval 1"
+    # ports:
+    #   - 8080:8080
+    volumes:
+      - /srv/transfer:/transfer
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.transfer.rule=Host(`transfer.$TRAEFIK_PUBLIC_DOMAIN`)"
+      - "traefik.http.routers.transfer.entrypoints=web"
+      - "traefik.http.services.transfer.loadbalancer.server.port=8080"
+
+      # Manually forcing https
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.transfer.middlewares=redirect-to-https"
+      # Instead of above, you can also use any existing Middleware in the traefik yml config's Dynamic Config section
+      # comment above two lines and add uncomment this
+      # - "traefik.http.routers.transfer.middlewares=https-redirectscheme@file"
+
+      # Needs another router for HTTPS
+      - "traefik.http.routers.transfer_sec.rule=Host(`transfer.$TRAEFIK_PUBLIC_DOMAIN`)"
+      - "traefik.http.routers.transfer_sec.entrypoints=websecure"
+      - "traefik.http.routers.transfer_sec.tls=true"
+
 
 volumes:
   letsencrypt:
