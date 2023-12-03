@@ -1,0 +1,2 @@
+.env filter=git-crypt diff=git-crypt
+sec.conf filter=git-crypt diff=git-crypt
