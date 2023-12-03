@@ -4,6 +4,7 @@ secrets/weechat-passphrase.txt
 sites/portainer
 sites/your-spotify/db
 container_configs/
+container_data/
 **__ignore__**
 logs
 weechat.log

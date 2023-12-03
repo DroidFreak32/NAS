@@ -1,0 +1,514 @@
+version: "3"
+name: private-containers
+
+services:
+  # nginx:
+  #   # Avoid git permission issue
+  #   environment:
+  #     PUID: "${UID}"
+  #     PGID: "${GID}"
+  #     DISABLE_IPV6: 'true'
+  #   image: 'jc21/nginx-proxy-manager:latest'
+  #   container_name: nginxproxymanager
+  #   dns_search:
+  #     containers_default
+  #   restart: unless-stopped
+  #   ports:
+  #     - '80:80'
+  #     - '81:81'
+  #     - '443:443'
+  #   volumes:
+  #     - ./nginxproxymanager:/data
+  #     - ./letsencrypt:/etc/letsencrypt
+  #   sysctls:
+  #     - net.ipv6.conf.all.disable_ipv6=1
+
+  homarr:
+    container_name: homarr
+    image: ghcr.io/ajnart/homarr:latest
+    volumes:
+      - ./container_data/homarr/configs:/app/data/configs
+      - ./container_data/homarr/icons:/app/public/icons
+    # ports:
+    #   - '7575:7575'
+    labels:
+      - "traefik.enable=true"
+      # - "traefik.docker.network=$TRAEFIK_NETWORK_NAME"
+      - "traefik.http.routers.homarr.rule=Host(`homarr.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.homarr.entrypoints=websecure"
+      - "traefik.http.routers.homarr.tls=true"
+    restart: no
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - WEBUI_PORT=1337
+    volumes:
+      - ./container_data/qbittorrent/config:/config
+      - /storage/downloads:/downloads
+      - /storage/disk2:/pool:ro
+      - /srv/http/downloads/Movies:/movies
+    ports:
+      # - 8080:8080
+      - 47963:47963
+      - 47963:47963/udp
+
+    labels:
+      - "traefik.enable=true"
+      # - "traefik.docker.network=$TRAEFIK_NETWORK_NAME"
+      - "traefik.http.routers.qbittorrent.rule=Host(`qbittorrent.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.qbittorrent.entrypoints=websecure"
+      - "traefik.http.routers.qbittorrent.tls=true"
+      # Use a custom service port
+      # - "traefik.http.routers.qbittorrent.service=qbittorrent"
+      - "traefik.http.services.qbittorrent.loadbalancer.server.port=1337"
+
+    restart: no
+
+  jdownloader-2:
+    container_name: jdownloader2
+    image: jlesage/jdownloader-2
+    # Not needed with NPM
+    # ports:
+    #   - "5800:5800"
+    expose:
+      - "5800"
+    volumes:
+      - "./container_data/jdownloader/config:/config:rw"
+      # - /storage/pool/media:/pool #optional
+      - /storage/downloads:/downloads #optional
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jdownloader2.rule=Host(`jd2.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.jdownloader2.entrypoints=websecure"
+      - "traefik.http.routers.jdownloader2.tls=true"
+      - "traefik.http.services.jdownloader2.loadbalancer.server.port=5800"
+
+
+  filebrowser:
+    image: filebrowser/filebrowser
+    container_name: filebrowser
+    # Not needed with NPM
+    # ports:
+    #  - 8035:80
+    volumes:
+      - /storage:/srv:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.filebrowser.rule=Host(`filebrowser.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.filebrowser.entrypoints=websecure"
+      - "traefik.http.routers.filebrowser.tls=true"
+      - "traefik.http.services.filebrowser.loadbalancer.server.port=80"
+    restart: no
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    environment:
+      - PUID=$UID
+      - PGID=$GID
+      - TZ=Etc/UTC
+    volumes:
+      - ./container_data/sonarr/config:/config
+      - /storage/pool/media:/pool #optional
+      - /storage/downloads:/downloads #optional
+      - /media/droidfreak32/GDriveBackup2/PENDING:/tv
+    # Not needed with NPM
+    # ports:
+    #   - 8989:8989
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sonarr.rule=Host(`sonarr.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.sonarr.entrypoints=websecure"
+      - "traefik.http.routers.sonarr.tls=true"
+      - "traefik.http.services.sonarr.loadbalancer.server.port=8989"
+    restart: no
+
+  sonarr-tmp:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr-tmp
+    environment:
+      - PUID=$UID
+      - PGID=$GID
+      - TZ=Etc/UTC
+    volumes:
+      - ./container_data/sonarr-tmp/config:/config
+      - /storage/pool/media:/pool #optional
+      - /storage/downloads:/downloads #optional
+      - /srv/http/downloads/tv:/tv
+    # Not needed with NPM
+    # ports:
+    #   - 8989:8989
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sonarr-tmp.rule=Host(`sonarr-tmp.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.sonarr-tmp.entrypoints=websecure"
+      - "traefik.http.routers.sonarr-tmp.tls=true"
+      - "traefik.http.services.sonarr-tmp.loadbalancer.server.port=8989"
+    restart: no
+
+  sonarr-anime:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr-anime
+    environment:
+      - PUID=$UID
+      - PGID=$GID
+      - TZ=Etc/UTC
+    volumes:
+      - ./container_data/sonarr-anime/config:/config
+      - /storage/pool/media:/pool #optional
+      - /storage/downloads:/downloads #optional
+    # Not needed with NPM
+    # ports:
+    #   - 8990:8989
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sonarr-anime.rule=Host(`sonarr-anime.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.sonarr-anime.entrypoints=websecure"
+      - "traefik.http.routers.sonarr-anime.tls=true"
+      - "traefik.http.services.sonarr-anime.loadbalancer.server.port=8989"
+    restart: no
+
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    environment:
+      - PUID=$UID
+      - PGID=$GID
+      - TZ=Etc/UTC
+    volumes:
+      - ./container_data/radarr/config:/config
+      - /storage/pool/media:/pool #optional
+      - /srv/http/downloads:/downloads #optional
+    # Not needed with NPM
+    # ports:
+    #   - 7878:7878
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.radarr.rule=Host(`radarr.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.radarr.entrypoints=websecure"
+      - "traefik.http.routers.radarr.tls=true"
+      - "traefik.http.services.radarr.loadbalancer.server.port=7878"
+    restart: no
+
+  radarr-hindi:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr-hindi
+    environment:
+      - PUID=$UID
+      - PGID=$GID
+      - TZ=Etc/UTC
+    volumes:
+      - ./container_data/radarr-hindi/config:/config
+      - /storage/pool/media:/pool #optional
+      - /storage/downloads:/downloads #optional
+    # Not needed with NPM
+    # ports:
+    #   - 7878:7878
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.radarr-hindi.rule=Host(`radarr-hindi.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.radarr-hindi.entrypoints=websecure"
+      - "traefik.http.routers.radarr-hindi.tls=true"
+      - "traefik.http.services.radarr-hindi.loadbalancer.server.port=7878"
+    restart: no
+
+  recyclarr:
+    image: ghcr.io/recyclarr/recyclarr
+    container_name: recyclarr
+    user: "${UID}:${GID}"
+    volumes:
+      - ./container_data/recyclarr/config:/config
+    environment:
+      # - PUID=$UID
+      # - PGID=$GID
+      - TZ=Etc/UTC
+    restart: no
+
+# Subtitles
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    environment:
+      - PUID=$UID
+      - PGID=$GID
+      - TZ=Etc/UTC
+    volumes:
+      - ./container_data/bazarr/config:/config
+      - /storage/pool/media:/pool #optional
+      - /storage/downloads:/downloads #optional
+    # ports:
+    #   - 6767:6767
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bazarr.rule=Host(`bazarr.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.bazarr.entrypoints=websecure"
+      - "traefik.http.routers.bazarr.tls=true"
+      - "traefik.http.services.bazarr.loadbalancer.server.port=6767"
+    restart: no
+
+  bazarr-hindi:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr-hindi
+    environment:
+      - PUID=$UID
+      - PGID=$GID
+      - TZ=Etc/UTC
+    volumes:
+      - ./container_data/bazarr-hindi/config:/config
+      - /storage/pool/media:/pool #optional
+      - /storage/downloads:/downloads #optional
+    # ports:
+    #   - 6767:6767
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bazarr-hindi.rule=Host(`bazarr-hindi.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.bazarr-hindi.entrypoints=websecure"
+      - "traefik.http.routers.bazarr-hindi.tls=true"
+      - "traefik.http.services.bazarr-hindi.loadbalancer.server.port=6767"
+    restart: no
+
+# Indexer
+  jackett:
+    image: lscr.io/linuxserver/jackett:latest
+    container_name: jackett
+    # depends_on:
+    #   - wgproxy
+    environment:
+      - PUID=$UID
+      - PGID=$GID
+      - TZ=Etc/UTC
+      - AUTO_UPDATE=true #optional
+      - RUN_OPTS= #optional
+    volumes:
+      - ./container_data/jackett/data:/config
+      - /storage/downloads:/downloads #optional
+    # Not needed in NPM
+    # ports:
+    #   - 9117:9117
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jackett.rule=Host(`jackett.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.jackett.entrypoints=websecure"
+      - "traefik.http.routers.jackett.tls=true"
+      - "traefik.http.services.jackett.loadbalancer.server.port=9117"
+    restart: no
+
+  wgproxy:
+    image: ghcr.io/k0in/docker-wireguard-socks-proxy:latest
+    container_name: wgproxy
+    cap_add:
+      - NET_ADMIN
+    dns:
+      - 1.1.1.1
+    environment:
+      - TZ=Etc/UTC
+    volumes:
+      - ./container_data/wgproxy:/etc/wireguard/:ro
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=1
+    # Not needed in NPM
+    ports:
+      - 1080:1080
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wgproxy.rule=Host(`wgproxy.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.wgproxy.entrypoints=websecure"
+      - "traefik.http.routers.wgproxy.tls=true"
+      - "traefik.http.services.wgproxy.loadbalancer.server.port=1080"
+    entrypoint: /bin/bash -c 'apk add curl; /entrypoint.sh'
+    restart: no
+
+  rdtclient:
+    image: rogerfar/rdtclient
+    container_name: rdtclient
+    volumes:
+      - '/storage/downloads:/downloads'
+      - './container_data/rdt-client/:/data/db'
+    restart: no
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+    # Not needed for NPM
+    # ports:
+    #     - '6500:6500'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rdtclient.rule=Host(`rdtclient.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.rdtclient.entrypoints=websecure"
+      - "traefik.http.routers.rdtclient.tls=true"
+      - "traefik.http.services.rdtclient.loadbalancer.server.port=6500"
+
+  # flaresolverr:
+  #   # DockerHub mirror flaresolverr/flaresolverr:latest
+  #   image: ghcr.io/flaresolverr/flaresolverr:latest
+  #   container_name: flaresolverr
+  #   environment:
+  #     - LOG_LEVEL=${LOG_LEVEL:-info}
+  #     - LOG_HTML=${LOG_HTML:-false}
+  #     - CAPTCHA_SOLVER=${CAPTCHA_SOLVER:-none}
+  #     - TZ=Etc/UTC
+  #   # Not Needed with NPM
+  #   # ports:
+  #   #   - "${PORT:-8191}:8191"
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.flaresolverr.rule=Host(`flaresolverr.$TRAEFIK_PRIVATE_DOMAIN`)"
+  #     - "traefik.http.routers.flaresolverr.entrypoints=websecure"
+  #     - "traefik.http.routers.flaresolverr.tls=true"
+  #     - "traefik.http.services.flaresolverr.loadbalancer.server.port=8191"
+  #   restart: unless-stopped
+
+  # prowlarr:
+  #   image: lscr.io/linuxserver/prowlarr:latest
+  #   container_name: prowlarr
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=Etc/UTC
+  #   volumes:
+  #     - ./prowlarr/data:/config
+  #   # Not needed in NPM
+  #   # ports:
+  #   #   - 9696:9696
+  #   restart: no
+
+  # shoko_server:
+  #   shm_size: 256m
+  #   container_name: shokoserver
+  #   image: shokoanime/server:latest
+  #   restart: always
+  #   environment:
+  #     - "PUID=$UID"
+  #     - "PGID=$GID"
+  #     - "TZ=Etc/UTC"
+  #   ports:
+  #     - "8111:8111"
+  #   volumes:
+  #     - ./shoko/.shoko:/home/shoko/.shoko
+  #     - ./shoko/.shoko/import:/mnt/import
+  #     - /mnt/shares/gd2/Otaku/:/mnt/anime
+
+  # filebot:
+  #   image: arranhs/filebot
+  #   container_name: filebot
+  #   # Not needed for NPM
+  #   # ports:
+  #   #   - 5801:8080
+  #   volumes:
+  #     - ./filebot:/config:rw
+  #     - /mnt/shares:/storage:rw
+
+  # jellyfin:
+  #   image: lscr.io/linuxserver/jellyfin:latest
+  #   container_name: jellyfin
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=Etc/UTC
+  #     - RFFMPEG_USER=pradyumn
+  #     - RFFMPEG_WOL=api
+  #     - RFFMPEG_HOST=srv.rooster-python.ts.net
+  #     - RFFMPEG_HOST_MAC="12:ab:34:cd:ef:56"
+  #     - DOCKER_MODS=linuxserver/mods:jellyfin-rffmpeg
+  #     - JELLYFIN_PublishedServerUrl=100.91.248.131 #optional
+  #   volumes:
+  #     - ./jellyfin/config:/config
+  #     - ./jellyfin/cache:/cache
+  #     - /mnt/shares:/data:ro
+    # Not needed for NPM
+    # ports:
+    #   - 8096:8096
+    #   - 8920:8920 #optional
+    #   - 7359:7359/udp #optional
+    #   - 1900:1900/udp #optional
+
+  # aria2web:
+  #     image: "node:alpine"
+  #     container_name: aria2web
+  #     user: "node"
+  #     working_dir: /home/node/app
+  #     environment:
+  #         - NODE_ENV=production
+  #     volumes:
+  #         - ./webui-aria2:/home/node/app
+  #     expose:
+  #         - "8888"
+  #     command: "node node-server.js"
+
+  # prometheus:
+  #   image: prom/prometheus:v2.37.9
+  #   container_name: prometheus
+  #   # ports:
+  #   #   - 9091:9090
+  #   command: "--config.file=/etc/prometheus/prometheus.yml"
+  #   volumes:
+  #     - ./prometheus/config:/etc/prometheus:ro
+  #     - prometheus-data:/prometheus
+  #   restart: no
+  #   networks:
+  #     - ipv6
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.prometheus.rule=Host(`prometheus.$TRAEFIK_PRIVATE_DOMAIN`)"
+  #     - "traefik.http.routers.prometheus.entrypoints=websecure"
+  #     - "traefik.http.routers.prometheus.tls=true"
+  #     - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+
+  # node-exporter:
+  #   image: quay.io/prometheus/node-exporter:latest
+  #   container_name: node-exporter
+  #   command:
+  #     - '--path.rootfs=/host'
+  #   # network_mode: host
+  #   pid: host
+  #   volumes:
+  #     - '/:/host:ro,rslave'
+  #   restart: no
+  #   networks:
+  #     - ipv6
+
+  # grafana:
+  #   image: grafana/grafana-oss:latest
+  #   container_name: grafana
+  #   extra_hosts:
+  #     - "host.docker.internal:host-gateway"
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - grafana-data:/var/lib/grafana
+  #   restart: no
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.grafana.rule=Host(`grafana.$TRAEFIK_PRIVATE_DOMAIN`)"
+  #     - "traefik.http.routers.grafana.entrypoints=websecure"
+  #     - "traefik.http.routers.grafana.tls=true"
+  #     - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+
+# volumes:
+#   prometheus-data:
+#     name: prometheus-data
+#     driver_opts:
+#       type: none
+#       device: /var/log/prometheus
+#       o: bind
+
+#   grafana-data:
+#     name: grafana-data
+#     driver_opts:
+#       type: none
+#       device: /var/log/grafana
+#       o: bind
+
+# Separating the IPv4 and IPv6 networks to prevent nginxproxymanager being unable to resolve container hostnames
+# Use the IPv6 network for containers that need IPv6 Internet Access
+networks:
+  default:
+    name: "$DOCKER_NETWORK_NAME"
+    external: true
