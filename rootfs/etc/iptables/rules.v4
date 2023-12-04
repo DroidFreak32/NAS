@@ -1,0 +1,207 @@
+*filter
+# Setting up a "deny all-accept all" policy
+# Allow all outgoing, but deny/drop all incoming and forwarding traffic
+:INPUT DROP [0:0]
+:FORWARD DROP [0:0]
+:OUTPUT ACCEPT [0:0]
+
+# Add custom Docker chain to prevent unexpected firewall bypass [1/2]
+# https://old.reddit.com/r/selfhosted/comments/ocqg1j/psa_docker_bypasses_ufw/h3w6tec/
+:DOCKER-USER - [0:0]
+
+# Custom per-protocol chains
+# Defining custom rules for UDP protocol.
+:UDP - [0:0]
+# Defining custom rules for TCP protocol.
+:TCP - [0:0]
+# Defining custom rules for ICMP protocol.
+:ICMP - [0:0]
+
+# Defining custom chain to Log and ACCEPT/DROP
+# https://stackoverflow.com/a/29544353/6437140
+:LOG_ACCEPT - [0:0]
+:LOG_DROP - [0:0]
+-A LOG_ACCEPT -j LOG --log-level 6 --log-prefix "INPUT:ACCEPT: "
+-A LOG_ACCEPT -j ACCEPT
+-A LOG_DROP -j LOG --log-level 6 --log-prefix "INPUT:DROP: "
+-A LOG_DROP -j DROP
+
+# Allowing packets through the loopback interface, which is used for local connections
+-A INPUT -i lo -j ACCEPT
+
+# https://forums.gentoo.org/viewtopic-t-991502-start-0.html
+-A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+
+# Allow established sessions to receive traffic
+-A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+# Allow DHCP requests
+-A INPUT -p udp --dport 67:68 --sport 67:68 -j ACCEPT
+
+#  Accept all established inbound connections
+-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+#  Allow ping
+-A INPUT -p icmp --icmp-type echo-request -j ACCEPT
+
+# Allow mDNS
+-A INPUT -d 224.0.0.251/32 -p udp -m udp --dport 5353 -j ACCEPT
+
+
+# ----------------------------------------------------------------------------------------
+# Custom rules go here
+#
+# iptables -A INPUT -p tcp -m state --state NEW -m tcp --dport 22 -j ACCEPT
+# ----------------------------------------------------------------------------------------
+
+# Allow forwarding on LAN and PPP interface.
+-A FORWARD -i ppp0 -j ACCEPT
+-A FORWARD -i vmbr0 -j ACCEPT
+
+# Add custom Docker chain to prevent unexpected firewall bypass [2/2]
+## https://old.reddit.com/r/selfhosted/comments/ocqg1j/psa_docker_bypasses_ufw/h3w6tec/
+-A DOCKER-USER -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+
+## This will only expose the containers that listen on port 80 & 443.
+## Rest all the containers will not be accessible from the internet even no matter if they port-forward
+### Update: Not needed here as I am only using IPv6 to expose - this should be done under ip6tables rules
+-A DOCKER-USER -p tcp -m multiport --dports 80,443,9001 -j ACCEPT
+
+## Allow "docker-ipv4" ipset to query DNS & wireguard server's UDP port
+## This fixes wgproxy unable to resolve & connect to domains.
+# ## sudo ipset create docker-ipv4 hash:net; sudo ipset add docker-ipv4 172.16.0.0/12
+# -A DOCKER-USER -m set --match-set docker-ipv4 src -p udp -m multiport --dports 53,80,443 -j LOG_ACCEPT
+# ## Same but also allow incoming requests from docker containers to connect to HTTP/HTTPS sites
+# -A DOCKER-USER -m set --match-set docker-ipv4 src -p tcp -m multiport --dports 80,443 -j LOG_ACCEPT
+## Alternatively, allow containers to access everything
+-A DOCKER-USER -m set --match-set docker-ipv4 src -j ACCEPT
+-A DOCKER-USER -j DROP
+
+# Allow full access for my trusted IPSet
+-A INPUT -m set --match-set trusted src -j ACCEPT
+
+# Allow full access for LAN IPSet
+-A INPUT -m set --match-set lan src -j ACCEPT
+
+# Allow tailscale CGNAT Subnet
+-A INPUT -i tailscale0 -s 100.64.0.0/10 -j ACCEPT
+
+# Allow only LAN devices to access known internal services
+-A INPUT -s 192.168.0.0/16 -p tcp -m multiport --dports 53,80,443,1080,1714:1764,2209,5900,9090,19999 -j ACCEPT -m comment --comment "Allows LAN devices to access to known services (DNS, HTTP(s), Dispatch-Proxy, KDEConnect, SSH, VNC, Cockpit, Netdata)"
+-A INPUT -s 192.168.0.0/16 -p udp -m multiport --dports 53,80,443,1080,1714:1764,2209,5900,9090,19999 -j ACCEPT -m comment --comment "Allows LAN devices to access to known services (DNS, HTTP(s), Dispatch-Proxy, KDEConnect, SSH, VNC, Cockpit, Netdata)"
+
+# Expose WireGuard & Torrent port
+-A INPUT -p udp -m multiport --dports 47111,47112,47963:47969 -j ACCEPT -m comment --comment "Allow WireGuard & Torrent ports"
+-A INPUT -p tcp -m multiport --dports 47111,47112,47963:47969 -j ACCEPT -m comment --comment "Allow WireGuard & Torrent ports"
+
+
+# Reject anything at this point. And print out rejection message with its specific protocol.
+# Issuing an ICMP "port unreachable" message to any new incoming UDP packets, rejecting them.
+-A INPUT -p udp -j REJECT --reject-with icmp-port-unreachable
+# Issuing a "tcp-reset" message to any new incoming TCP packets, rejecting them.
+-A INPUT -p tcp -j REJECT --reject-with tcp-reset
+# Issuing an "icmp-proto-unreachable" message to any new incoming TCP packets, dropping all other incoming packets.
+-A INPUT -j REJECT --reject-with icmp-proto-unreachable
+
+COMMIT
+
+*raw
+# Allowing packets in the PREROUTING chain
+:PREROUTING ACCEPT [0:0]
+# Allows packets in the OUTPUT chain, which is used for locally generated packets
+:OUTPUT ACCEPT [0:0]
+# Commits the changes to the kernel
+COMMIT
+
+*nat
+:PREROUTING ACCEPT [0:0]
+# Allowing packets in the INPUT chains for NAT
+:INPUT ACCEPT [0:0]
+# Allowing packets in the OUTPUT chains for NAT
+:OUTPUT ACCEPT [0:0]
+# Allowing packets in the POSTROUTING chains for NAT
+:POSTROUTING ACCEPT [0:0]
+
+# https://github.com/docker/for-linux/issues/690#issuecomment-529319051
+# -A POSTROUTING ! -o docker0 -s 172.16.0.0/12 -j MASQUERADE
+
+
+# Allow AP clients to access the outside world
+# -A POSTROUTING -s 192.168.4.0/24 -o br0 -m comment --comment "JioFi Support" -j MASQUERADE
+# -A POSTROUTING -s 192.168.4.0/24 -o ppp0 -m comment --comment "JioFi Support" -j MASQUERADE
+
+# Commits the changes to the kernel
+COMMIT
+
+*security
+# Allowing packets in the INPUT chains for security
+:INPUT ACCEPT [0:0]
+# Allowing packets in the FORWARD chains for security
+:FORWARD ACCEPT [0:0]
+# Allowing packets in the OUTPUT chains for security
+:OUTPUT ACCEPT [0:0]
+# Commits the changes to the kernel
+COMMIT
+
+*mangle
+# Allowing packets in the PREROUTING chains for mangle
+:PREROUTING ACCEPT [0:0]
+# Allowing packets in the INPUT chains for mangle
+:INPUT ACCEPT [0:0]
+# Allowing packets in the FORWARD chains for mangle
+:FORWARD ACCEPT [0:0]
+# Allowing packets in the OUTPUT chains for mangle
+:OUTPUT ACCEPT [0:0]
+# Allowing packets in the POSTROUTING chains for mangle
+:POSTROUTING ACCEPT [0:0]
+# Commits the changes to the kernel
+COMMIT
+
+
+#  Allow all outbound traffic - you can modify this to only allow certain traffic
+#-A OUTPUT -j ACCEPT
+
+#  Allow HTTP and HTTPS connections from anywhere (the normal ports for websites and SSL).
+#-A INPUT –p tcp -–dport 80 -j ACCEPT
+#-A INPUT –p tcp -–dport 443 -j ACCEPT
+
+#  Allow ping
+#-A INPUT –p icmp --icmp-type echo-request -j ACCEPT
+
+
+
+
+
+
+
+
+
+
+
+
+# DHCP
+#-A INPUT –p udp -–dport 67 -j ACCEPT
+#-A INPUT –p udp -–dport 68 -j ACCEPT
+
+# DNS
+#-A INPUT –p tcp --dport 53 -j ACCEPT
+#-A INPUT –p udp --dport 53 -j ACCEPT
+
+#  Log iptables denied calls
+#-A INPUT -m limit --limit 5/min -j LOG --log-level 7
+
+#  Drop all other inbound - default deny unless explicitly allowed policy
+#-A INPUT -j DROP
+#-A FORWARD -j ACCEPT
+
+
+#COMMIT
+
+
+#*nat
+
+
+#:PREROUTING ACCEPT [0:0]
+#:POSTROUTING ACCEPT [0:0]
+
+#COMMIT
