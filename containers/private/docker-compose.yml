@@ -345,6 +345,24 @@ services:
       - "traefik.http.routers.rdtclient.tls=true"
       - "traefik.http.services.rdtclient.loadbalancer.server.port=6500"
 
+  shadowbg:
+    build:
+      context: .
+      dockerfile: Dockerfiles/shadowbg.Dockerfile
+      # Avoid strict firewall rules blocking access to internet during build
+      network: host
+    image: alpine-shadowbg:latest
+    container_name: shadowbg
+    volumes:
+      - './container_data/shadowbg/rarbg_db.sqlite:/data/rarbg_db.sqlite'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.shadowbg.rule=Host(`shadowbg.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.shadowbg.entrypoints=websecure"
+      - "traefik.http.routers.shadowbg.tls=true"
+      - "traefik.http.services.shadowbg.loadbalancer.server.port=80"
+    # entrypoint: /bin/sh -c 'sleep 99999'
+
   # flaresolverr:
   #   # DockerHub mirror flaresolverr/flaresolverr:latest
   #   image: ghcr.io/flaresolverr/flaresolverr:latest
