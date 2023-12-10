@@ -50,7 +50,8 @@ services:
     volumes:
       - ./container_data/qbittorrent/config:/config
       - /storage/downloads:/downloads
-      - /storage/disk2:/pool:ro
+      - /storage/disk1:/disk1:ro
+      - /storage/disk2:/disk2:ro
       - /srv/http/downloads/Movies:/movies
     ports:
       # - 8080:8080
@@ -362,6 +363,52 @@ services:
       - "traefik.http.routers.shadowbg.tls=true"
       - "traefik.http.services.shadowbg.loadbalancer.server.port=80"
     # entrypoint: /bin/sh -c 'sleep 99999'
+
+########## Your Spotify section start ##########
+
+  your_spotify:
+    image: lscr.io/linuxserver/your_spotify:latest
+    container_name: your_spotify
+    depends_on:
+      - mongo
+    environment:
+      - PUID=${UID}
+      - PGID=${GID}
+      - TZ=Etc/UTC
+      - APP_URL=https://your_spotify.$TRAEFIK_PRIVATE_DOMAIN
+      - SPOTIFY_PUBLIC=${SPOTIFY_PUBLIC}
+      - SPOTIFY_SECRET=${SPOTIFY_SECRET}
+      - CORS=all
+      - MONGO_ENDPOINT=mongodb://mongo:27017/your_spotify
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.your_spotify.rule=Host(`your_spotify.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.your_spotify.entrypoints=web"
+      - "traefik.http.services.your_spotify.loadbalancer.server.port=80"
+
+      # Manually forcing https
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.your_spotify.middlewares=redirect-to-https"
+      # Instead of above, you can also use any existing Middleware in the traefik yml config's Dynamic Config section
+      # comment above two lines and add uncomment this
+      # - "traefik.http.routers.your_spotify.middlewares=https-redirectscheme@file"
+
+      # Needs another router for HTTPS
+      - "traefik.http.routers.your_spotify_sec.rule=Host(`your_spotify.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.your_spotify_sec.entrypoints=websecure"
+      - "traefik.http.routers.your_spotify_sec.tls=true"
+
+  # Your spotify uses an external mongo db
+  mongo:
+    # Avoid git permission issue
+    # user: "${UID}:${GID}"
+    container_name: mongo
+    image: mongo:4
+    volumes:
+      - /opt/mongodb:/data/db
+    # entrypoint: /bin/sh -c 'sleep 99999'
+
+########## Your Spotify section END ##########
 
   # flaresolverr:
   #   # DockerHub mirror flaresolverr/flaresolverr:latest
