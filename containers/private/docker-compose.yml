@@ -369,8 +369,8 @@ services:
   your_spotify:
     image: lscr.io/linuxserver/your_spotify:latest
     container_name: your_spotify
-    depends_on:
-      - mongo
+    # depends_on:
+    #   - mongo
     environment:
       - PUID=${UID}
       - PGID=${GID}
@@ -397,16 +397,6 @@ services:
       - "traefik.http.routers.your_spotify_sec.rule=Host(`your_spotify.$TRAEFIK_PRIVATE_DOMAIN`)"
       - "traefik.http.routers.your_spotify_sec.entrypoints=websecure"
       - "traefik.http.routers.your_spotify_sec.tls=true"
-
-  # Your spotify uses an external mongo db
-  mongo:
-    # Avoid git permission issue
-    # user: "${UID}:${GID}"
-    container_name: mongo
-    image: mongo:4
-    volumes:
-      - /opt/mongodb:/data/db
-    # entrypoint: /bin/sh -c 'sleep 99999'
 
 ########## Your Spotify section END ##########
 

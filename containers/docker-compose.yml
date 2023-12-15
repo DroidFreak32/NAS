@@ -125,6 +125,22 @@ services:
     # networks:
     #   - "$DOCKER_NETWORK_NAME"
 
+  # Your spotify, sharelatex, etc uses an external mongo db
+  mongo:
+    # Avoid git permission issue
+    # user: "${UID}:${GID}"
+    container_name: mongo
+    command: "--replSet overleaf"
+    image: mongo:4.4
+    volumes:
+      - /opt/mongodb:/data/db
+    healthcheck:
+        test: echo 'db.stats().ok' | mongo localhost:27017/test --quiet
+        interval: 10s
+        timeout: 10s
+        retries: 5
+    # entrypoint: /bin/sh -c 'sleep 99999'
+
   qcs:
     image: qualys/qcs-sensor:latest
     container_name: qualys-container-sensor
