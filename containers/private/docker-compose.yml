@@ -47,6 +47,8 @@ services:
       - PGID=1000
       - TZ=Etc/UTC
       - WEBUI_PORT=1337
+      - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:qbittorrent
+      - TP_THEME=nord
     volumes:
       - ./container_data/qbittorrent/config:/config
       - /storage/downloads:/downloads
@@ -113,11 +115,13 @@ services:
       - PUID=$UID
       - PGID=$GID
       - TZ=Etc/UTC
+      - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:sonarr
+      - TP_THEME=nord
     volumes:
       - ./container_data/sonarr/config:/config
       - /storage/pool/media:/pool #optional
       - /storage/downloads:/downloads #optional
-      - /media/droidfreak32/GDriveBackup2/PENDING:/tv
+      - /srv/http/downloads/tv:/tv
     # Not needed with NPM
     # ports:
     #   - 8989:8989
@@ -182,6 +186,8 @@ services:
       - PUID=$UID
       - PGID=$GID
       - TZ=Etc/UTC
+      - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:radarr
+      - TP_THEME=nord
     volumes:
       - ./container_data/radarr/config:/config
       - /storage/pool/media:/pool #optional
@@ -204,6 +210,8 @@ services:
       - PUID=$UID
       - PGID=$GID
       - TZ=Etc/UTC
+      - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:radarr
+      - TP_THEME=nord
     volumes:
       - ./container_data/radarr-hindi/config:/config
       - /storage/pool/media:/pool #optional
