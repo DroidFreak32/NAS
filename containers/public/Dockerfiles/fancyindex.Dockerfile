@@ -1,6 +1,6 @@
 # Using alpine base image instead of nginx-alpine to support fancyindex
 
-FROM alpine:latest
+FROM alpine:3.18
 
 # Install necessary packages
 RUN apk update && \

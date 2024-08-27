@@ -1,0 +1,29 @@
+# version: '3'
+services:
+
+  jd2:
+    container_name: jd2
+    image: jlesage/jdownloader-2
+    # Not needed with NPM
+    # ports:
+    #   - "5800:5800"
+    expose:
+      - "5800"
+    volumes:
+      - "./container_data/jd2/config:/config:rw"
+      # - /storage/pool/media:/pool #optional
+      - /srv/http/downloads:/downloads #optional
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jd2.rule=Host(`jd2.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.jd2.entrypoints=websecure"
+      - "traefik.http.routers.jd2.tls=true"
+      - "traefik.http.services.jd2.loadbalancer.server.port=5800"
+
+    restart: no
+
+# Use the IPv6 network for containers that need IPv6 Internet Access
+networks:
+  default:
+    name: "$DOCKER_NETWORK_NAME"
+    external: true

@@ -1,4 +1,4 @@
-version: "3"
+# version: "3"
 name: private-containers
 
 services:
@@ -23,21 +23,25 @@ services:
   #   sysctls:
   #     - net.ipv6.conf.all.disable_ipv6=1
 
-  homarr:
-    container_name: homarr
-    image: ghcr.io/ajnart/homarr:latest
-    volumes:
-      - ./container_data/homarr/configs:/app/data/configs
-      - ./container_data/homarr/icons:/app/public/icons
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
     # ports:
-    #   - '7575:7575'
+    #   - 3000:3000
+    volumes:
+      - ./container_data/homepage/config:/app/config # Make sure your local config directory exists
+      - /var/run/docker.sock:/var/run/docker.sock # (optional) For docker integrations, see alternative methods
+    environment:
+      - PUID=$UID
+      - PGID=$GID
+      - TZ=Etc/UTC
     labels:
       - "traefik.enable=true"
       # - "traefik.docker.network=$TRAEFIK_NETWORK_NAME"
-      - "traefik.http.routers.homarr.rule=Host(`homarr.$TRAEFIK_PRIVATE_DOMAIN`)"
-      - "traefik.http.routers.homarr.entrypoints=websecure"
-      - "traefik.http.routers.homarr.tls=true"
-    restart: no
+      - "traefik.http.routers.homepage.rule=Host(`homepage.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.homepage.entrypoints=websecure"
+      - "traefik.http.routers.homepage.tls=true"
+      - "traefik.http.services.homepage.loadbalancer.server.port=3000"
 
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
@@ -54,7 +58,7 @@ services:
       - /storage/downloads:/downloads
       - /storage/disk1:/disk1:ro
       - /storage/disk2:/disk2:ro
-      - /srv/http/downloads/Movies:/movies
+      - /srv/http/downloads/:/mnt
     ports:
       # - 8080:8080
       - 47963:47963
@@ -71,26 +75,6 @@ services:
       - "traefik.http.services.qbittorrent.loadbalancer.server.port=1337"
 
     restart: no
-
-  jdownloader-2:
-    container_name: jdownloader2
-    image: jlesage/jdownloader-2
-    # Not needed with NPM
-    # ports:
-    #   - "5800:5800"
-    expose:
-      - "5800"
-    volumes:
-      - "./container_data/jdownloader/config:/config:rw"
-      # - /storage/pool/media:/pool #optional
-      - /storage/downloads:/downloads #optional
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.jdownloader2.rule=Host(`jd2.$TRAEFIK_PRIVATE_DOMAIN`)"
-      - "traefik.http.routers.jdownloader2.entrypoints=websecure"
-      - "traefik.http.routers.jdownloader2.tls=true"
-      - "traefik.http.services.jdownloader2.loadbalancer.server.port=5800"
-
 
   filebrowser:
     image: filebrowser/filebrowser
@@ -144,7 +128,7 @@ services:
       - ./container_data/sonarr-tmp/config:/config
       - /storage/pool/media:/pool #optional
       - /storage/downloads:/downloads #optional
-      - /srv/http/downloads/tv:/tv
+      # - /media/droidfreak32/Extras/Videos/:/srv
     # Not needed with NPM
     # ports:
     #   - 8989:8989
@@ -191,7 +175,7 @@ services:
     volumes:
       - ./container_data/radarr/config:/config
       - /storage/pool/media:/pool #optional
-      - /srv/http/downloads:/downloads #optional
+      - /storage/downloads:/downloads #optional
     # Not needed with NPM
     # ports:
     #   - 7878:7878
@@ -227,6 +211,31 @@ services:
       - "traefik.http.services.radarr-hindi.loadbalancer.server.port=7878"
     restart: no
 
+  radarr-tmp:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr-tmp
+    environment:
+      - PUID=$UID
+      - PGID=$GID
+      - TZ=Etc/UTC
+      - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:radarr
+      - TP_THEME=nord
+    volumes:
+      - ./container_data/radarr-tmp/config:/config
+      - /storage/pool/media:/pool #optional
+      - /srv/http/downloads:/downloads #optional
+      # - /media/droidfreak32/Extras/Videos:/srv
+    # Not needed with NPM
+    # ports:
+    #   - 7878:7878
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.radarr-tmp.rule=Host(`radarr-tmp.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.radarr-tmp.entrypoints=websecure"
+      - "traefik.http.routers.radarr-tmp.tls=true"
+      - "traefik.http.services.radarr-tmp.loadbalancer.server.port=7878"
+    restart: no
+
   recyclarr:
     image: ghcr.io/recyclarr/recyclarr
     container_name: recyclarr
@@ -237,49 +246,6 @@ services:
       # - PUID=$UID
       # - PGID=$GID
       - TZ=Etc/UTC
-    restart: no
-
-# Subtitles
-  bazarr:
-    image: lscr.io/linuxserver/bazarr:latest
-    container_name: bazarr
-    environment:
-      - PUID=$UID
-      - PGID=$GID
-      - TZ=Etc/UTC
-    volumes:
-      - ./container_data/bazarr/config:/config
-      - /storage/pool/media:/pool #optional
-      - /storage/downloads:/downloads #optional
-    # ports:
-    #   - 6767:6767
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.bazarr.rule=Host(`bazarr.$TRAEFIK_PRIVATE_DOMAIN`)"
-      - "traefik.http.routers.bazarr.entrypoints=websecure"
-      - "traefik.http.routers.bazarr.tls=true"
-      - "traefik.http.services.bazarr.loadbalancer.server.port=6767"
-    restart: no
-
-  bazarr-hindi:
-    image: lscr.io/linuxserver/bazarr:latest
-    container_name: bazarr-hindi
-    environment:
-      - PUID=$UID
-      - PGID=$GID
-      - TZ=Etc/UTC
-    volumes:
-      - ./container_data/bazarr-hindi/config:/config
-      - /storage/pool/media:/pool #optional
-      - /storage/downloads:/downloads #optional
-    # ports:
-    #   - 6767:6767
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.bazarr-hindi.rule=Host(`bazarr-hindi.$TRAEFIK_PRIVATE_DOMAIN`)"
-      - "traefik.http.routers.bazarr-hindi.entrypoints=websecure"
-      - "traefik.http.routers.bazarr-hindi.tls=true"
-      - "traefik.http.services.bazarr-hindi.loadbalancer.server.port=6767"
     restart: no
 
 # Indexer
@@ -372,6 +338,31 @@ services:
       - "traefik.http.services.shadowbg.loadbalancer.server.port=80"
     # entrypoint: /bin/sh -c 'sleep 99999'
 
+  whoami:
+    container_name: whoami
+    # A container that exposes an API to show its IP address
+    image: traefik/whoami
+    labels:
+
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami.rule=Host(`whoami.${TRAEFIK_PRIVATE_DOMAIN}`)"
+      - "traefik.http.routers.whoami.entrypoints=web"
+
+      # Manually forcing https
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.whoami.middlewares=redirect-to-https"
+      # Instead of above, you can also use any existing Middleware in the traefik yml config's Dynamic Config section
+      # comment above two lines and add uncomment this
+      # - "traefik.http.routers.whoami.middlewares=https-redirectscheme@file"
+
+      # Needs another router for HTTPS
+      - "traefik.http.routers.whoami_sec.rule=Host(`whoami.${TRAEFIK_PRIVATE_DOMAIN}`)"
+      - "traefik.http.routers.whoami_sec.entrypoints=websecure"
+      - "traefik.http.routers.whoami_sec.tls=true"
+
+    # networks:
+    #   - "$DOCKER_NETWORK_NAME"
+
 ########## Your Spotify section start ##########
 
   your_spotify:
@@ -407,26 +398,6 @@ services:
       - "traefik.http.routers.your_spotify_sec.tls=true"
 
 ########## Your Spotify section END ##########
-
-  # flaresolverr:
-  #   # DockerHub mirror flaresolverr/flaresolverr:latest
-  #   image: ghcr.io/flaresolverr/flaresolverr:latest
-  #   container_name: flaresolverr
-  #   environment:
-  #     - LOG_LEVEL=${LOG_LEVEL:-info}
-  #     - LOG_HTML=${LOG_HTML:-false}
-  #     - CAPTCHA_SOLVER=${CAPTCHA_SOLVER:-none}
-  #     - TZ=Etc/UTC
-  #   # Not Needed with NPM
-  #   # ports:
-  #   #   - "${PORT:-8191}:8191"
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.http.routers.flaresolverr.rule=Host(`flaresolverr.$TRAEFIK_PRIVATE_DOMAIN`)"
-  #     - "traefik.http.routers.flaresolverr.entrypoints=websecure"
-  #     - "traefik.http.routers.flaresolverr.tls=true"
-  #     - "traefik.http.services.flaresolverr.loadbalancer.server.port=8191"
-  #   restart: unless-stopped
 
   # prowlarr:
   #   image: lscr.io/linuxserver/prowlarr:latest
@@ -553,6 +524,22 @@ services:
   #     - "traefik.http.routers.grafana.entrypoints=websecure"
   #     - "traefik.http.routers.grafana.tls=true"
   #     - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+
+  # homarr:
+  #   container_name: homarr
+  #   image: ghcr.io/ajnart/homarr:latest
+  #   volumes:
+  #     - ./container_data/homarr/configs:/app/data/configs
+  #     - ./container_data/homarr/icons:/app/public/icons
+  #   # ports:
+  #   #   - '7575:7575'
+  #   labels:
+  #     - "traefik.enable=true"
+  #     # - "traefik.docker.network=$TRAEFIK_NETWORK_NAME"
+  #     - "traefik.http.routers.homarr.rule=Host(`homarr.$TRAEFIK_PRIVATE_DOMAIN`)"
+  #     - "traefik.http.routers.homarr.entrypoints=websecure"
+  #     - "traefik.http.routers.homarr.tls=true"
+  #   restart: no
 
 # volumes:
 #   prometheus-data:

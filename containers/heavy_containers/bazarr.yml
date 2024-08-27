@@ -1,0 +1,51 @@
+# version: '3'
+services:
+
+# Subtitles
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    environment:
+      - PUID=$UID
+      - PGID=$GID
+      - TZ=Etc/UTC
+    volumes:
+      - ./container_data/bazarr/config:/config
+      - /storage/pool/media:/pool #optional
+      - /storage/downloads:/downloads #optional
+    # ports:
+    #   - 6767:6767
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bazarr.rule=Host(`bazarr.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.bazarr.entrypoints=websecure"
+      - "traefik.http.routers.bazarr.tls=true"
+      - "traefik.http.services.bazarr.loadbalancer.server.port=6767"
+    restart: no
+
+  bazarr-hindi:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr-hindi
+    environment:
+      - PUID=$UID
+      - PGID=$GID
+      - TZ=Etc/UTC
+    volumes:
+      - ./container_data/bazarr-hindi/config:/config
+      - /storage/pool/media:/pool #optional
+      - /storage/downloads:/downloads #optional
+    # ports:
+    #   - 6767:6767
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bazarr-hindi.rule=Host(`bazarr-hindi.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.bazarr-hindi.entrypoints=websecure"
+      - "traefik.http.routers.bazarr-hindi.tls=true"
+      - "traefik.http.services.bazarr-hindi.loadbalancer.server.port=6767"
+    restart: no
+
+# Use the IPv6 network for containers that need IPv6 Internet Access
+networks:
+  default:
+    name: "$DOCKER_NETWORK_NAME"
+    external: true

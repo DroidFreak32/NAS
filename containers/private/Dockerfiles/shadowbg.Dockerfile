@@ -39,6 +39,9 @@ VOLUME /data
 # Expose ports
 EXPOSE 80
 
+# Source Repo
+LABEL org.opencontainers.image.source=https://github.com/oss-app-forks/shadowbg
+
 # ------------------------------------------------------------------------------
 # Define default command
 CMD ["/app/app.sh"]

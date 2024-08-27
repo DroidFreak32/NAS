@@ -10,3 +10,4 @@ logs
 weechat.log
 weechat_fifo_*
 relay.pem
+scratch/
