@@ -1,0 +1,13 @@
+create trusted hash:net family inet hashsize 1024 maxelem 65536 bucketsize 12 initval 0xd2c8883c
+add trusted 192.168.54.22
+create trusted-v6 hash:net family inet6 hashsize 1024 maxelem 65536 bucketsize 12 initval 0xae32c42f
+create lan hash:net family inet hashsize 1024 maxelem 65536 bucketsize 12 initval 0x7f2bab76
+add lan 192.168.54.0/24
+create lan-v6 hash:net family inet6 hashsize 1024 maxelem 65536 bucketsize 12 initval 0x2a14cca2
+add lan-v6 fd42:1921:681::/64
+create docker-ipv4 hash:net family inet hashsize 1024 maxelem 65536 bucketsize 12 initval 0x26568fc0
+add docker-ipv4 172.18.0.0/24
+create docker-ipv6 hash:net family inet6 hashsize 1024 maxelem 65536 bucketsize 12 initval 0x3bd7a3eb
+add docker-ipv6 fd69:bad:c0de::/64
+create docker-trusted hash:net family inet hashsize 1024 maxelem 65536 bucketsize 12 initval 0x5b1260c9
+add docker-trusted 172.18.0.254

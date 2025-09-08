@@ -1,0 +1,15 @@
+[Unit]
+Description=Run ppp0-watchdog every 20 minutes
+
+[Timer]
+# first run 10 min after boot
+OnBootSec=10min
+# run every 20 min thereafter
+OnUnitActiveSec=20min
+# optional jitter window
+AccuracySec=30s
+
+Unit=ppp0-watchdog.service
+
+[Install]
+WantedBy=timers.target

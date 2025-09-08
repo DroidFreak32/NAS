@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+alias ip='sudo ip'
+ip rule add from 192.168.54.100 lookup 111
+ip route add 192.168.54.0/24 dev vmbr0 table 111
+ip route add default via 192.168.54.1 dev vmbr0 table 111
+
+#  3609  [2024-02-16 05:37:21] ip rule add from  2401:4900:1c06:8fff::49:6a4b table 111
+#  3610  [2024-02-16 05:37:23] sudo ip rule add from  2401:4900:1c06:8fff::49:6a4b table 111
+#  3611  [2024-02-16 05:37:27] sudo ip -6 rule add from  2401:4900:1c06:8fff::49:6a4b table 111
+#  3612  [2024-02-16 05:37:35] curl -6 ifconfig.co --interface vmbr0
+#  3613  [2024-02-16 05:37:43] curl -6 ifconfig.co --interface  2401:4900:1c06:8fff::49:6a4b
+#  3614  [2024-02-16 05:37:59] ip -6 route show table 111
+#  3615  [2024-02-16 05:38:15] ip -6 route del default dev vmbr0 metric 1024 pref medium table 111
+#  3616  [2024-02-16 05:38:17] sudo ip -6 route del default dev vmbr0 metric 1024 pref medium table 111
+#  3617  [2024-02-16 05:38:24] alias ip='sudo ip'
+#  3618  [2024-02-16 05:38:35] ip -6 route show
+#  3619  [2024-02-16 05:38:56] sudo ip -6 route add default via fe80::eacc:18ff:feba:5256 dev vmbr0 table 111
+#  3620  [2024-02-16 05:38:59] ip -6 rule show
+#  3621  [2024-02-16 05:39:04] curl -6 ifconfig.co --interface  2401:4900:1c06:8fff::49:6a4b
+#  3622  [2024-02-16 05:39:12] curl -6 ifconfig.co --interface vmbr0
+#  3623  [2024-02-16 05:39:14] curl -6 ifconfig.co
+#  3624  [2024-02-16 05:39:32] ip -6 route show | grep vmbr0
+#  3625  [2024-02-16 05:40:01] ip -6 route add 2401:4900:1c06:2ec3::/64 dev vmbr0 table 111
+#  3626  [2024-02-16 05:40:01] ip -6 route add 2401:4900:1c06:53e2::/64 dev vmbr0 table 111
+#  3627  [2024-02-16 05:40:01] ip -6 route add fe80::/64 dev vmbr0 table 111
+#  3628  [2024-02-16 05:40:01] ip -6 route add default via fe80::eacc:18ff:feba:5256 dev vmbr0 table 111
