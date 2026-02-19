@@ -134,14 +134,14 @@ services:
     network_mode: host
 
   # https://github.com/traefik/traefik/issues/977#issuecomment-394119675
-  ipv6nat:
-    container_name: docker-ipv6nat
-    image: robbertkl/ipv6nat
-    privileged: true
-    network_mode: "host"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /lib/modules:/lib/modules:ro
+  #  ipv6nat:
+  #    container_name: docker-ipv6nat
+  #    image: robbertkl/ipv6nat
+  #    privileged: true
+  #    network_mode: "host"
+  #    volumes:
+  #      - /var/run/docker.sock:/var/run/docker.sock:ro
+  #      - /lib/modules:/lib/modules:ro
 
 networks:
   # Uncomment this this if you have not run the first run script!!
