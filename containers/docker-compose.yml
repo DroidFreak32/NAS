@@ -20,7 +20,7 @@ services:
       # The HTTPS Port
       - "443:443"
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - "host.docker.internal:$DOCKER_NETWORK_IPV4_GATEWAY"
     labels:
       - "traefik.enable=true"
 
@@ -63,8 +63,10 @@ services:
       - traefik-ssl-certs:/ssl-certs
       - letsencrypt:/etc/letsencrypt/live:ro
 
-    # networks:
-    #   - "$DOCKER_NETWORK_NAME"
+    # Set a static IP to enable specific firewall rules allowing access to host's resources (ex: netdata)
+    networks:
+      default:
+        ipv4_address: "$TRAEFIK_STATIC_IP"
 
   traefik-ssl-certificate-exporter:
     build:
@@ -104,9 +106,10 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
-      ACTIVATIONID: "b26a6f3d-3b1a-41ad-9ce2-9a0d4f4c1de1"
-      CUSTOMERID: "7b965f5c-6540-c28c-8024-8289aa9d1f7b"
-      POD_URL: "https://cmsqagpublic.qg1.apps.qualys.in/ContainerSensor"
+      ACTIVATIONID: "$QLYS_CS_ACTIVATIONID"
+      CUSTOMERID: "$QLYS_CS_CUSTOMERID"
+      POD_URL: "$QLYS_CS_POD_URL"
+      qualys_https_proxy: "$qualys_https_proxy"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /etc/qualys:/usr/local/qualys/qpa/data/conf/agent-data
@@ -166,4 +169,3 @@ volumes:
   #     type: none
   #     device: /var/www/.well-known/acme-challenge
   #     o: bind
-
