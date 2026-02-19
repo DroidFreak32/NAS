@@ -21,10 +21,14 @@
 # https://stackoverflow.com/a/29544353/6437140
 :LOG_ACCEPT - [0:0]
 :LOG_DROP - [0:0]
+:LOG_REJECT - [0:0]
+
 -A LOG_ACCEPT -j LOG --log-level 6 --log-prefix "INPUT:ACCEPT: "
 -A LOG_ACCEPT -j ACCEPT
 -A LOG_DROP -j LOG --log-level 6 --log-prefix "INPUT:DROP: "
 -A LOG_DROP -j DROP
+-A LOG_REJECT -j LOG --log-level 6 --log-prefix "INPUT:REJECT: "
+-A LOG_REJECT -j REJECT
 
 # Allowing packets through the loopback interface, which is used for local connections
 -A INPUT -i lo -j ACCEPT
@@ -74,14 +78,14 @@
 # ## Same but also allow incoming requests from docker containers to connect to HTTP/HTTPS sites
 # -A DOCKER-USER -m set --match-set docker-ipv4 src -p tcp -m multiport --dports 80,443 -j LOG_ACCEPT
 ## Alternatively, allow containers to access everything
--A DOCKER-USER -m set --match-set docker-ipv4 src -j ACCEPT
--A DOCKER-USER -j DROP
+-A DOCKER-USER -m set --match-set docker-ipv4 src -j LOG_ACCEPT
+-A DOCKER-USER -j LOG_REJECT
 
 # Allow full access for my trusted IPSet
--A INPUT -m set --match-set trusted src -j ACCEPT
+# -A INPUT -m set --match-set trusted src -j LOG_ACCEPT
 
 # Allow full access for LAN IPSet
--A INPUT -m set --match-set lan src -j ACCEPT
+# -A INPUT -m set --match-set lan src -j ACCEPT
 
 # Allow tailscale CGNAT Subnet
 -A INPUT -i tailscale0 -s 100.64.0.0/10 -j ACCEPT
@@ -91,19 +95,22 @@
 -A INPUT -s 192.168.0.0/16 -p udp -m multiport --dports 53,80,443,1080,1714:1764,2209,5900,9090,19999 -j ACCEPT -m comment --comment "Allows LAN devices to access to known services (DNS, HTTP(s), Dispatch-Proxy, KDEConnect, SSH, VNC, Cockpit, Netdata)"
 
 # Expose WireGuard & Torrent port
--A INPUT -p udp -m multiport --dports 47111,47112,47963:47969 -j ACCEPT -m comment --comment "Allow WireGuard & Torrent ports"
--A INPUT -p tcp -m multiport --dports 47111,47112,47963:47969 -j ACCEPT -m comment --comment "Allow WireGuard & Torrent ports"
+-A INPUT -p udp -m multiport --dports 47111,47112,47963:47969 -j LOG_ACCEPT -m comment --comment "Allow WireGuard & Torrent ports"
+-A INPUT -p tcp -m multiport --dports 47111,47112,47963:47969 -j LOG_ACCEPT -m comment --comment "Allow WireGuard & Torrent ports"
 
 # Allow traefik docker container to access internal services
--A INPUT -m set --match-set docker-trusted src -p tcp -m multiport --dports 8006,19999 -m comment --comment "Proxmox, Netdata" -j ACCEPT
+-A INPUT -m set --match-set docker-trusted src -p tcp -m multiport --dports 8006,19999 -m comment --comment "Proxmox, Netdata" -j LOG_ACCEPT
 
 # Reject anything at this point. And print out rejection message with its specific protocol.
 # Issuing an ICMP "port unreachable" message to any new incoming UDP packets, rejecting them.
--A INPUT -p udp -j REJECT --reject-with icmp-port-unreachable
+-A INPUT -p udp -j LOG_REJECT
+#--reject-with icmp-port-unreachable
 # Issuing a "tcp-reset" message to any new incoming TCP packets, rejecting them.
--A INPUT -p tcp -j REJECT --reject-with tcp-reset
+-A INPUT -p tcp -j LOG_REJECT
+#--reject-with tcp-reset
 # Issuing an "icmp-proto-unreachable" message to any new incoming TCP packets, dropping all other incoming packets.
--A INPUT -j REJECT --reject-with icmp-proto-unreachable
+-A INPUT -j LOG_REJECT
+#--reject-with icmp-proto-unreachable
 
 COMMIT
 

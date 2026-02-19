@@ -12,16 +12,20 @@
 # https://stackoverflow.com/a/29544353/6437140
 :LOG_ACCEPT - [0:0]
 :LOG_DROP - [0:0]
+:LOG_REJECT - [0:0]
+
 -A LOG_ACCEPT -j LOG --log-level 6 --log-prefix "INPUT:ACCEPT: "
 -A LOG_ACCEPT -j ACCEPT
 -A LOG_DROP -j LOG --log-level 6 --log-prefix "INPUT:DROP: "
 -A LOG_DROP -j DROP
+-A LOG_REJECT -j LOG --log-level 6 --log-prefix "INPUT:REJECT6: "
+-A LOG_REJECT -j REJECT
 
 # This accepts ongoing traffic for any existing connections that we've already accepted through other rule
 -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 
 # Accept all ICMP packets. Unlike with IPv4, it's not a good idea to block ICMPv6 traffic as IPv6 is much more heavily dependent on it
--A INPUT -p ipv6-icmp -j ACCEPT
+-A INPUT -p ipv6-icmp -j LOG_ACCEPT
 
 # Accept all traffic from/to the local interface:
 -A INPUT -i lo -j ACCEPT
@@ -50,7 +54,7 @@
 ## This will only expose the containers that listen on port 80 & 443.
 ## Rest all the containers will not be accessible from the internet even no matter if they port-forward
 ### Update:  Needed here as I am only using IPv6 to expose - this should be done under ip6tables rules
--A DOCKER-USER -p tcp -m multiport --dports 80,443,9001 -j LOG_ACCEPT
+-A DOCKER-USER -p tcp -m multiport --dports 80,443,9001,5900 -j LOG_ACCEPT
 
 ## Allow "docker" ipset to query DNS & wireguard server's UDP port
 ## This fixes wgproxy unable to resolve & connect to domains.
@@ -59,8 +63,8 @@
 # ## Same but also allow incoming requests from docker containers to connect to HTTP/HTTPS sites
 # -A DOCKER-USER -m set --match-set docker-ipv6 src -p tcp -m multiport --dports 80,443 -j ACCEPT
 ## Alternatively, allow containers to access everything
--A DOCKER-USER -m set --match-set docker-ipv6 src -j ACCEPT
--A DOCKER-USER -j DROP
+-A DOCKER-USER -m set --match-set docker-ipv6 src -j LOG_ACCEPT
+-A DOCKER-USER -j LOG_REJECT6
 
 # Allow full access for my trusted IPSet
 -A INPUT -m set --match-set trusted-v6 src -j ACCEPT
@@ -71,14 +75,15 @@
 -A INPUT -s fc00::/7 -p tcp -m multiport --dports 53,80,443,1080,1714:1764,2209,5900,9090,19999 -j ACCEPT -m comment --comment "Allows LAN devices to access to known services (DNS, HTTP(s), Dispatch-Proxy, KDEConnect, SSH, VNC, Cockpit, Netdata)"
 -A INPUT -s fc00::/7 -p udp -m multiport --dports 53,80,443,1080,1714:1764,2209,5900,9090,19999 -j ACCEPT -m comment --comment "Allows LAN devices to access to known services (DNS, HTTP(s), Dispatch-Proxy, KDEConnect, SSH, VNC, Cockpit, Netdata)"
 
--A INPUT -p udp -m multiport --dports 443,9001,47111,47112,47963:47969 -j ACCEPT -m comment --comment "Allow HTTPS, IRC Relay, WireGuard & Torrent ports"
--A INPUT -p tcp -m multiport --dports 443,9001,47111,47112,47963:47969 -j ACCEPT -m comment --comment "Allow HTTPS, IRC Relay, WireGuard & Torrent ports"
+-A INPUT -p udp -m multiport --dports 443,9001,47111,47112,47963:47969 -j LOG_ACCEPT -m comment --comment "Allow HTTPS, IRC Relay, WireGuard & Torrent ports"
+-A INPUT -p tcp -m multiport --dports 443,9001,47111,47112,47963:47969 -j LOG_ACCEPT -m comment --comment "Allow HTTPS, IRC Relay, WireGuard & Torrent ports"
 
 # At the end of our rules, we reject all traffic that didn't match a rule, using "port unreachable".
 # This results in the standard "Connection refused" message at the other end, and effectively hides the fact that we have a firewall.
 # Tools such as nmap will report that all our ports are "closed" rather than "filtered"
 # and have a much more difficult time determining that we even have a firewall.
--A INPUT -j REJECT --reject-with icmp6-adm-prohibited
+-A INPUT -j LOG_REJECT
+# --reject-with icmp6-adm-prohibited
 
 COMMIT
 # Completed on Fri Aug 12 10:26:25 2022
