@@ -92,13 +92,30 @@ services:
     command: "--replSet overleaf"
     image: mongo:4.4
     volumes:
-      - /opt/mongodb:/data/db
+      - /srv/db/mongodb:/data/db
     healthcheck:
-        test: echo 'db.stats().ok' | mongo localhost:27017/test --quiet
-        interval: 10s
-        timeout: 10s
-        retries: 5
+      test: echo 'db.stats().ok' | mongo localhost:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
     # entrypoint: /bin/sh -c 'sleep 99999'
+
+  mongoinit:
+    container_name: mongoinit
+    image: mongo:4.4
+    # this container will exit after executing the command
+    restart: "no"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    entrypoint:
+      [
+        "mongo",
+        "--host",
+        "mongo:27017",
+        "--eval",
+        'rs.initiate({ _id: "overleaf", members: [ { _id: 0, host: "mongo:27017" } ] })',
+      ]
 
   qcs:
     image: qualys/qcs-sensor:latest
