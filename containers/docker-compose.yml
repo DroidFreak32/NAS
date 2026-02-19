@@ -1,11 +1,11 @@
-version: "3"
+# version: "3"
 name: management
 
 services:
   traefik:
     container_name: traefik
     # The official v2 Traefik docker image
-    image: traefik:v2.10
+    image: traefik:v2
     # Enables the web UI and tells Traefik to listen to docker
     # command: --api.insecure=true --providers.docker
 
@@ -47,17 +47,17 @@ services:
       - "traefik.http.middlewares.lan.ipwhitelist.sourcerange=100.64.0.0/10, 172.18.0.0/12, 127.0.0.1/8"
 
       # Additional redirects for services that are not running on docker containers
-      # Update: Does not actually work.
+      # Update: Does not actually work. https://github.com/traefik/traefik/issues/8753
       # - "traefik.http.routers.cockpit.rule=Host(`cockpit.$TRAEFIK_PRIVATE_DOMAIN`)"
       # - "traefik.http.routers.cockpit.entrypoints=websecure"
       # - "traefik.http.routers.cockpit.tls=true"
       # - "traefik.http.routers.cockpit.service=cockpit"
       # - "traefik.http.services.cockpit.loadbalancer.server.port=9090"
-      # # - "traefik.http.services.cockpit.loadbalancer.servers.url[0]=https://host.docker.internal"
+      # - "traefik.http.services.cockpit.loadbalancer.servers.url[0]=https://host.docker.internal"
 
     volumes:
       # So that Traefik can listen to the Docker events
-      - ./traefik.yml:/etc/traefik/traefik.yml
+      - ./container_data/traefik/traefik.yml:/etc/traefik/traefik.yml
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/log/traefik:/var/log/traefik
       - traefik-ssl-certs:/ssl-certs
