@@ -67,7 +67,9 @@ services:
     #   - "$DOCKER_NETWORK_NAME"
 
   traefik-ssl-certificate-exporter:
-    image: rafi0101/traefik-ssl-certificate-exporter:latest
+    build:
+      context: .
+      dockerfile: Dockerfiles/traefik-certexport.Dockerfile
     container_name: traefik-certexport
     environment:
       CRON_TIME: "* * * * *"
@@ -76,52 +78,7 @@ services:
     volumes:
       - traefik-ssl-certs:/app/traefik
       - letsencrypt:/app/certs
-    # networks:
-    #   - "$DOCKER_NETWORK_NAME"
-
-  whoami_public:
-    container_name: whoami_public
-    # A container that exposes an API to show its IP address
-    image: traefik/whoami
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.whoami_public.rule=Host(`whoami.$TRAEFIK_PUBLIC_DOMAIN`)"
-      - "traefik.http.routers.whoami_public.entrypoints=web"
-
-      # Manually forcing https
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-      - "traefik.http.routers.whoami_public.middlewares=redirect-to-https"
-
-      # Needs another router for HTTPS
-      - "traefik.http.routers.whoami_public_sec.rule=Host(`whoami.$TRAEFIK_PUBLIC_DOMAIN`)"
-      - "traefik.http.routers.whoami_public_sec.entrypoints=websecure"
-      - "traefik.http.routers.whoami_public_sec.tls=true"
-      # - "traefik.http.routers.whoami_public_sec.tls.certresolver=production"
-    # networks:
-    #   - "$DOCKER_NETWORK_NAME"
-
-  whoami:
-    container_name: whoami
-    # A container that exposes an API to show its IP address
-    image: traefik/whoami
-    labels:
-
-      - "traefik.enable=true"
-      - "traefik.http.routers.whoami.rule=Host(`whoami.${TRAEFIK_PRIVATE_DOMAIN}`)"
-      - "traefik.http.routers.whoami.entrypoints=web"
-
-      # Manually forcing https
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-      - "traefik.http.routers.whoami.middlewares=redirect-to-https"
-      # Instead of above, you can also use any existing Middleware in the traefik yml config's Dynamic Config section
-      # comment above two lines and add uncomment this
-      # - "traefik.http.routers.whoami.middlewares=https-redirectscheme@file"
-
-      # Needs another router for HTTPS
-      - "traefik.http.routers.whoami_sec.rule=Host(`whoami.${TRAEFIK_PRIVATE_DOMAIN}`)"
-      - "traefik.http.routers.whoami_sec.entrypoints=websecure"
-      - "traefik.http.routers.whoami_sec.tls=true"
-
+      # -  /tmp/sslexport:/app/certs
     # networks:
     #   - "$DOCKER_NETWORK_NAME"
 
