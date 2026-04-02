@@ -18,7 +18,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.bazarr.rule=Host(`bazarr.$TRAEFIK_PRIVATE_DOMAIN`)"
-      - "traefik.http.routers.bazarr.entrypoints=websecure"
+      # - "traefik.http.routers.bazarr.entrypoints=websecure"
       - "traefik.http.routers.bazarr.tls=true"
       - "traefik.http.services.bazarr.loadbalancer.server.port=6767"
     restart: no
@@ -39,7 +39,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.bazarr-hindi.rule=Host(`bazarr-hindi.$TRAEFIK_PRIVATE_DOMAIN`)"
-      - "traefik.http.routers.bazarr-hindi.entrypoints=websecure"
+      # - "traefik.http.routers.bazarr-hindi.entrypoints=websecure"
       - "traefik.http.routers.bazarr-hindi.tls=true"
       - "traefik.http.services.bazarr-hindi.loadbalancer.server.port=6767"
     restart: no
