@@ -485,3 +485,24 @@ COMMIT
 COMMIT
 # Completed on Fri Aug 12 10:26:25 2022
 ```
+
+### Cockpit Setup
+
+```bash
+source containers/.env
+mkdir -p rootfs/etc/systemd/system/cockpit.socket.d/ rootfs/etc/cockpit/ rootfs/etc/systemd/system/cockpit.service.d/
+cat << EOF > rootfs/etc/systemd/system/cockpit.socket.d/listen.conf
+[Socket]
+ListenStream=
+ListenStream=127.0.0.1:9090
+ListenStream=$DOCKER_NETWORK_IPV4_GATEWAY:9090
+FreeBind=yes
+EOF
+
+cat << EOF > rootfs/etc/cockpit/cockpit.conf
+[WebService]
+Origins = https://cockpit.${TRAEFIK_PRIVATE_DOMAIN}
+ProtocolHeader = X-Forwarded-Proto
+ForwardedForHeader = X-Forwarded-For
+AllowUnencrypted = true
+EOF
