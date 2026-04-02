@@ -4,8 +4,8 @@ name: management
 services:
   traefik:
     container_name: traefik
-    # The official v2 Traefik docker image
-    image: traefik:v2
+    # The official v3 Traefik docker image
+    image: traefik:v3
     # Enables the web UI and tells Traefik to listen to docker
     # command: --api.insecure=true --providers.docker
 
@@ -33,9 +33,11 @@ services:
       - "traefik.http.routers.traefik.tls.domains[1].main=$TRAEFIK_PRIVATE_DOMAIN"
       - "traefik.http.routers.traefik.tls.domains[1].sans=*.$TRAEFIK_PRIVATE_DOMAIN"
 
-      # Use a custom service to avoid traefik getting confused: https://stackoverflow.com/a/59859846/6437140
-      - "traefik.http.routers.traefik.service=certbot"
-      - "traefik.http.services.certbot.loadbalancer.server.port=80"
+      # # Use a custom service to avoid traefik getting confused: https://stackoverflow.com/a/59859846/6437140
+      # - "traefik.http.routers.traefik.service=certbot"
+      # - "traefik.http.services.certbot.loadbalancer.server.port=80"
+      # Use Traefik's built-in noop service to avoid getting confused when requesting certs
+      - "traefik.http.routers.traefik.service=noop@internal"
 
       # # For internal API Access
       - "traefik.http.routers.dashboard.rule=Host(`traefik.$TRAEFIK_PRIVATE_DOMAIN`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
@@ -44,7 +46,7 @@ services:
       # # Only allow access through Tailscale
       - "traefik.http.routers.dashboard.middlewares=lan"
       - "traefik.http.routers.dashboard.tls=true"
-      - "traefik.http.middlewares.lan.ipwhitelist.sourcerange=100.64.0.0/10, 172.18.0.0/12, 127.0.0.1/8"
+      - "traefik.http.middlewares.lan.ipallowlist.sourcerange=100.64.0.0/10, 172.18.0.0/12, 127.0.0.1/8"
 
       # Additional redirects for services that are not running on docker containers
       # Update: Does not actually work. https://github.com/traefik/traefik/issues/8753
@@ -58,6 +60,7 @@ services:
     volumes:
       # So that Traefik can listen to the Docker events
       - ./container_data/traefik/traefik.yml:/etc/traefik/traefik.yml
+      - ./container_data/traefik/dynamic:/etc/traefik/dynamic
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/log/traefik:/var/log/traefik
       - traefik-ssl-certs:/ssl-certs
