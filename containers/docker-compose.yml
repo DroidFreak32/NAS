@@ -49,13 +49,23 @@ services:
       - "traefik.http.middlewares.lan.ipallowlist.sourcerange=100.64.0.0/10, 172.18.0.0/12, 127.0.0.1/8"
 
       # Additional redirects for services that are not running on docker containers
-      # Update: Does not actually work. https://github.com/traefik/traefik/issues/8753
-      # - "traefik.http.routers.cockpit.rule=Host(`cockpit.$TRAEFIK_PRIVATE_DOMAIN`)"
-      # - "traefik.http.routers.cockpit.entrypoints=websecure"
-      # - "traefik.http.routers.cockpit.tls=true"
-      # - "traefik.http.routers.cockpit.service=cockpit"
-      # - "traefik.http.services.cockpit.loadbalancer.server.port=9090"
-      # - "traefik.http.services.cockpit.loadbalancer.servers.url[0]=https://host.docker.internal"
+      # ~Update: Does not actually work. https://github.com/traefik/traefik/issues/8753~
+
+      # Cockpit
+      - "traefik.http.routers.cockpit.rule=Host(`cockpit.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.cockpit.entrypoints=websecure"
+      - "traefik.http.routers.cockpit.tls=true"
+      - "traefik.http.routers.cockpit.service=cockpit"
+      - "traefik.http.services.cockpit.loadbalancer.server.url=https://host.docker.internal:9090"
+      - "traefik.http.services.cockpit.loadbalancer.passhostheader=false"
+
+      # pve
+      - "traefik.http.routers.pve.rule=Host(`pve.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.pve.entrypoints=websecure"
+      - "traefik.http.routers.pve.tls=true"
+      - "traefik.http.routers.pve.service=pve"
+      - "traefik.http.services.pve.loadbalancer.server.url=https://host.docker.internal:8006"
+      - "traefik.http.services.pve.loadbalancer.passhostheader=false"
 
     volumes:
       # So that Traefik can listen to the Docker events
