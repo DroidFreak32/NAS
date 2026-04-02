@@ -5,9 +5,14 @@ IF="ppp0"
 
 # Does the interface directory exist under /sys/class/net?
 if [[ -d "/sys/class/net/${IF}" ]]; then
+    echo "Interface ${IF} already exists at $(date). Exiting." | systemd-cat -p "info" -t ppp0-watchdog
     exit 0        # interface present → nothing to do
 fi
 
 # Otherwise attempt to bring it up
 echo "Restarting ppp0 at $(date)" | systemd-cat -p "warning" -t ppp0-watchdog
 /usr/sbin/ifup "${IF}"
+
+sleep 10
+
+systemctl is-active --quiet wide-dhcpv6-client.service ||  systemctl start wide-dhcpv6-client.service
