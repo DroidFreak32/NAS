@@ -97,6 +97,15 @@ services:
     # networks:
     #   - "$DOCKER_NETWORK_NAME"
 
+  sablier:
+    container_name: sablier
+    image: sablierapp/sablier:1.11.1
+    command:
+      - start
+      - --provider.name=docker
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+
   # Your spotify, sharelatex, etc uses an external mongo db
   mongo:
     # Avoid git permission issue
