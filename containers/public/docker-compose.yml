@@ -168,18 +168,34 @@ services:
     image: traefik/whoami
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.whoami_public.rule=Host(`whoami.$TRAEFIK_PUBLIC_DOMAIN`)"
-      - "traefik.http.routers.whoami_public.entrypoints=web"
+      # - "traefik.http.routers.whoami_public.rule=Host(`whoami.$TRAEFIK_PUBLIC_DOMAIN`)"
+      # - "traefik.http.routers.whoami_public.entrypoints=web"
 
-      # Manually forcing https
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-      - "traefik.http.routers.whoami_public.middlewares=redirect-to-https"
+      # # Manually forcing https
+      # - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      # - "traefik.http.routers.whoami_public.middlewares=redirect-to-https"
 
       # Needs another router for HTTPS
       - "traefik.http.routers.whoami_public_sec.rule=Host(`whoami.$TRAEFIK_PUBLIC_DOMAIN`)"
       - "traefik.http.routers.whoami_public_sec.entrypoints=websecure"
       - "traefik.http.routers.whoami_public_sec.tls=true"
       # - "traefik.http.routers.whoami_public_sec.tls.certresolver=production"
+
+      # Enable Sablier for this container
+      - sablier.enable=true
+      - sablier.group=whoami
+      - "traefik.docker.allownonrunning=true"
+
+      # Configure the Sablier middleware (Dynamic File Provider)
+      - "traefik.http.routers.whoami_public_sec.middlewares=sablier-whoami@file"
+
+      # # (Alternative) Configure the Sablier middleware (Docker Provider)
+      # - traefik.http.routers.whoami_public_sec.middlewares=sablier-mw
+      # - traefik.http.middlewares.sablier-mw.plugin.sablier.group=whoami
+      # - traefik.http.middlewares.sablier-mw.plugin.sablier.sablierUrl=http://sablier:10000
+      # - traefik.http.middlewares.sablier-mw.plugin.sablier.sessionDuration=10s
+      # - traefik.http.middlewares.sablier-mw.plugin.sablier.dynamic.displayName=Whoami Service
+
     # networks:
     #   - "$DOCKER_NETWORK_NAME"
 
