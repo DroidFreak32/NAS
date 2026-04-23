@@ -99,7 +99,7 @@
 -A INPUT -p tcp -m multiport --dports 47111,47112,47963:47969 -j LOG_ACCEPT -m comment --comment "Allow WireGuard & Torrent ports"
 
 # Allow traefik docker container to access internal services
--A INPUT -m set --match-set docker-trusted src -p tcp -m multiport --dports 9090,8006,19999 -m comment --comment "Cockpit, Proxmox, Netdata" -j LOG_ACCEPT
+-A INPUT -m set --match-set docker-trusted src -p tcp -m multiport --dports 7627,9090,8006,19999 -m comment --comment "Snapraidd, Cockpit, Proxmox, Netdata" -j LOG_ACCEPT
 
 # Reject anything at this point. And print out rejection message with its specific protocol.
 # Issuing an ICMP "port unreachable" message to any new incoming UDP packets, rejecting them.

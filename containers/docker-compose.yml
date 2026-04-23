@@ -67,6 +67,13 @@ services:
       - "traefik.http.services.pve.loadbalancer.server.url=https://host.docker.internal:8006"
       - "traefik.http.services.pve.loadbalancer.passhostheader=false"
 
+      # snapraid
+      - "traefik.http.routers.snapraid.rule=Host(`snapraid.$TRAEFIK_PRIVATE_DOMAIN`)"
+      - "traefik.http.routers.snapraid.entrypoints=websecure"
+      - "traefik.http.routers.snapraid.tls=true"
+      - "traefik.http.routers.snapraid.service=snapraid"
+      - "traefik.http.services.snapraid.loadbalancer.server.url=http://host.docker.internal:7627"
+
     volumes:
       # So that Traefik can listen to the Docker events
       - ./container_data/traefik/traefik.yml:/etc/traefik/traefik.yml
