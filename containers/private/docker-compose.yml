@@ -24,25 +24,19 @@ services:
   #     - net.ipv6.conf.all.disable_ipv6=1
 
   # DDNS
-  inadyn:
-    image: troglobit/inadyn:v2.12.0
-    container_name: inadyn
+  cloudflare-ddns:
+    build:
+      context: Dockerfiles/cf_ddns
+      dockerfile: Dockerfile
+      # Avoid strict firewall rules blocking access to internet during build
+      network: host
+    container_name: cloudflare-ddns
+    restart: always
     environment:
-      - PUID=${UID}
-      - PGID=${GID}
-      - TZ=Etc/UTC
-    volumes:
-      # - "$REPO_HOME/containers/private/container_data/inadyn/inadyn.conf:/etc/inadyn.conf"
-      - ./container_data/inadyn/inadyn.conf:/etc/inadyn.conf
-    # labels:
-    #   - "traefik.enable=true"
-    #   # - "traefik.docker.network=$TRAEFIK_NETWORK_NAME"
-    #   - "traefik.http.routers.inadyn.rule=Host(`inadyn.$TRAEFIK_PRIVATE_DOMAIN`)"
-    #   - "traefik.http.routers.inadyn.entrypoints=websecure"
-    #   - "traefik.http.routers.inadyn.tls=true"
-    #   - "traefik.http.services.inadyn.loadbalancer.server.port=3000"
-    # # entrypoint: sleep infinity
-    restart: unless-stopped
+      - CF_DNS_API_TOKEN=$CF_DNS_API_TOKEN
+      - DDNS_DOMAIN=$TRAEFIK_PUBLIC_DOMAIN
+      - INTERVAL=300
+      # - DRY_RUN=true
 
   homepage:
     image: ghcr.io/gethomepage/homepage:latest
