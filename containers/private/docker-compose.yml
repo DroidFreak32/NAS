@@ -382,11 +382,13 @@ services:
       dockerfile: Dockerfiles/shadowbg.Dockerfile
       # Avoid strict firewall rules blocking access to internet during build
       network: host
-    image: shadowbg:latest
+    # image: ghcr.io/oss-app-forks/shadowbg:latest
     pull_policy: never
     container_name: shadowbg
+    environment:
+      - GIN_MODE=release
     volumes:
-      - "./container_data/shadowbg/rarbg_db.sqlite:/data/rarbg_db.sqlite"
+      - "./container_data/shadowbg:/data"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.shadowbg.rule=Host(`shadowbg.$TRAEFIK_PRIVATE_DOMAIN`)"
