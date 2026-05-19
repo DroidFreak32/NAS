@@ -64,7 +64,7 @@
 # -A DOCKER-USER -m set --match-set docker-ipv6 src -p tcp -m multiport --dports 80,443 -j ACCEPT
 ## Alternatively, allow containers to access everything
 -A DOCKER-USER -m set --match-set docker-ipv6 src -j LOG_ACCEPT
--A DOCKER-USER -j LOG_REJECT6
+-A DOCKER-USER -j LOG_REJECT
 
 # Allow full access for my trusted IPSet
 -A INPUT -m set --match-set trusted-v6 src -j ACCEPT
