@@ -37,6 +37,7 @@ services:
       - DDNS_DOMAIN=$TRAEFIK_PUBLIC_DOMAIN
       - INTERVAL=300
       # - DRY_RUN=true
+      - IPV6_ONLY=true
 
   homepage:
     image: ghcr.io/gethomepage/homepage:latest

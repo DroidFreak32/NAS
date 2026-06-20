@@ -10,6 +10,8 @@ CF_DNS_API_TOKEN = os.getenv("CF_DNS_API_TOKEN", "your_api_token_here")
 DDNS_DOMAIN = os.getenv("DDNS_DOMAIN", "example.org")
 INTERVAL = int(os.getenv("INTERVAL", "300"))
 DRY_RUN = os.getenv("DRY_RUN", "false").lower() in ("true", "1", "yes")
+IPV4_ONLY = os.getenv("IPV4_ONLY", "false").lower() in ("true", "1", "yes")
+IPV6_ONLY = os.getenv("IPV6_ONLY", "false").lower() in ("true", "1", "yes")
 LOG_FILE = os.getenv("LOG_FILE", "/app/ddns.log")
 
 # --- ANSI Color Codes ---
@@ -121,7 +123,7 @@ class CloudflareManager:
         except Exception as e:
             log(f"Error updating {name}: {e}", RED)
 
-    def delete_record(self, zone_id, name, ip_type):
+    def delete_record(self, zone_id, name, ip_type, reason="unreachable"):
         try:
             r = requests.get(f"{self.base_url}/zones/{zone_id}/dns_records?type={ip_type}&name={name}", headers=self.headers)
             res = r.json()
@@ -131,9 +133,9 @@ class CloudflareManager:
                 if not DRY_RUN:
                     requests.delete(del_url, headers=self.headers)
                 log(f"URL: {del_url}")
-                log(f"IPv6 unreachable. Deleted AAAA record for {name}", AMBER)
+                log(f"{ip_type} {reason}. Deleted {ip_type} record for {name}", AMBER)
         except Exception as e:
-            log(f"Error deleting record: {e}", RED)
+            log(f"Error deleting {ip_type} record: {e}", RED)
 
 def main():
     cf = CloudflareManager(CF_DNS_API_TOKEN)
@@ -142,22 +144,39 @@ def main():
     if DRY_RUN:
         log("DRY RUN MODE ENABLED", AMBER)
 
-    while True:
-        ipv4 = get_public_ip("ipv4")
-        ipv6 = get_public_ip("ipv6")
+    if IPV4_ONLY and IPV6_ONLY:
+        log("Both IPV4_ONLY and IPV6_ONLY are set to true. Defaulting to dual-stack mode.", AMBER)
 
-        if not ipv4:
+    while True:
+        mode = "dual"
+        if IPV4_ONLY and not IPV6_ONLY:
+            mode = "ipv4"
+        elif IPV6_ONLY and not IPV4_ONLY:
+            mode = "ipv6"
+
+        ipv4 = get_public_ip("ipv4") if mode in ["dual", "ipv4"] else None
+        ipv6 = get_public_ip("ipv6") if mode in ["dual", "ipv6"] else None
+
+        if mode in ["dual", "ipv4"] and not ipv4:
             log("Could not detect IPv4 address!", RED)
 
         for domain in DOMAINS:
             zone_id = cf.get_zone_id(domain)
             if not zone_id: continue
 
-            if ipv4: cf.update_record(zone_id, domain, "A", ipv4)
-            if ipv6:
+            # A Record Handling
+            if mode == "ipv6":
+                cf.delete_record(zone_id, domain, "A", "not requested (IPV6_ONLY)")
+            elif ipv4:
+                cf.update_record(zone_id, domain, "A", ipv4)
+            
+            # AAAA Record Handling
+            if mode == "ipv4":
+                cf.delete_record(zone_id, domain, "AAAA", "not requested (IPV4_ONLY)")
+            elif ipv6:
                 cf.update_record(zone_id, domain, "AAAA", ipv6)
             else:
-                cf.delete_record(zone_id, domain, "AAAA")
+                cf.delete_record(zone_id, domain, "AAAA", "unreachable")
 
         log(f"Sleeping for {INTERVAL} seconds...")
         time.sleep(INTERVAL)
